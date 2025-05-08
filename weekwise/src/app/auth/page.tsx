@@ -31,7 +31,7 @@ export default function AuthPage() {
 
                 <div className="flex gap-4 lg:flex-row sm:flex-col items-start">
                     {/* //? Sign up / sign in container */}
-                    <div className="space-y-2 bg-white border-gray-200 border-1 flex-1 rounded-3xl p-5 min-w-[400]">
+                    <div className="space-y-2 bg-white border-gray-200 border-1 rounded-3xl p-5 w-[400]">
                         <div className="text-xl mb-6">
                             Sign into your account
                         </div>
@@ -41,7 +41,7 @@ export default function AuthPage() {
                             placeholder="Email"
                             type="email"
                         />
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center">
                             <input
                                 className="rounded-xl p-2 border-1 border-gray-200 w-full"
                                 placeholder="Password"
@@ -78,7 +78,7 @@ export default function AuthPage() {
                     </div>
 
                     {/* // ? Sign Up container */}
-                    <div className="space-y-2 bg-white border-gray-200 border-1 flex-1 rounded-3xl p-5 min-w-[400]">
+                    <div className="space-y-2 bg-white border-gray-200 border-1 rounded-3xl p-5 w-[400]">
                         <div className="text-xl mb-6">Or create an account</div>
 
                         <input
@@ -91,7 +91,7 @@ export default function AuthPage() {
                             placeholder="Your name"
                             type="text"
                         />
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center">
                             <input
                                 className="rounded-xl p-2 border-1 border-gray-200 w-full"
                                 placeholder="Set a password"
