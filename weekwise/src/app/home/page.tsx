@@ -81,8 +81,10 @@ export default function HomePage() {
                 </div>
             </div>
 
-            {/* //? --------WEEK / DAYS (min 2 days, max 7 days) TASKS SECTION--------- */}
-            <div className="w-full h-10 bg-red-100 mt-5">Week/Days</div>
+            {/* //? --------WEEK / DAYS (min 3 days, max 7 days) TASKS SECTION--------- */}
+            <div className="w-full h-10 bg-red-100 mt-5">
+                {/* 7-day (view switchable to 7, 6, 5, 4, 3 days)  */}
+            </div>
         </div>
     );
 }
