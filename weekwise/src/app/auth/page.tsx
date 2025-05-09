@@ -2,6 +2,8 @@
 import React, { useState } from "react";
 import * as Icon from "react-feather";
 import Image from "next/image";
+import Button from "@/components/Button";
+import TextField from "@/components/TextField";
 
 export default function AuthPage() {
     const [isSignUpPasswordVisible, setIsSignUpPasswordVisible] =
@@ -36,14 +38,9 @@ export default function AuthPage() {
                             Sign into your account
                         </div>
 
-                        <input
-                            className="rounded-xl p-2 border-1 border-gray-200 w-full"
-                            placeholder="Email"
-                            type="email"
-                        />
+                        <TextField placeholder="Email" type="email" />
                         <div className="flex items-center">
-                            <input
-                                className="rounded-xl p-2 border-1 border-gray-200 w-full"
+                            <TextField
                                 placeholder="Password"
                                 type={`${
                                     isSignInPasswordVisible
@@ -54,7 +51,7 @@ export default function AuthPage() {
                             <button
                                 className={`flex items-center justify-center w-11 h-10 rounded-xl cursor-pointer ${
                                     isSignInPasswordVisible
-                                        ? " bg-[#0a0a0a] text-white"
+                                        ? " bg-gray-800 text-white"
                                         : "bg-transparent text-black"
                                 } transition-colors duration-100 `}
                                 onClick={() =>
@@ -71,29 +68,20 @@ export default function AuthPage() {
                         <button className="text-blue-600 bg-limeGlow text-sm flex items-center h-10 justify-center p-2 cursor-pointer">
                             Reset password
                         </button>
-
-                        <button className="w-full bg-[#4E6813] hover:bg-[#4E6813]/90 cursor-pointer text-white font-semibold p-2 rounded-xl  transition-colors duration-50">
+                        <Button className="w-full bg-primary-500 hover:bg-primary-700">
                             Sign In
-                        </button>
+                        </Button>
                     </div>
 
                     {/* // ? Sign Up container */}
                     <div className="space-y-2 bg-white border-gray-200 border-1 rounded-3xl p-5 w-[400]">
                         <div className="text-xl mb-6">Or create an account</div>
 
-                        <input
-                            className="rounded-xl p-2 border-1 border-gray-200 w-full"
-                            placeholder="Email"
-                            type="email"
-                        />
-                        <input
-                            className="rounded-xl p-2 border-1 border-gray-200 w-full"
-                            placeholder="Your name"
-                            type="text"
-                        />
+                        <TextField placeholder="Email" type="email" />
+                        <TextField placeholder="Your name" type="text" />
+
                         <div className="flex items-center">
-                            <input
-                                className="rounded-xl p-2 border-1 border-gray-200 w-full"
+                            <TextField
                                 placeholder="Set a password"
                                 type={`${
                                     isSignUpPasswordVisible
@@ -104,7 +92,7 @@ export default function AuthPage() {
                             <button
                                 className={`flex items-center justify-center w-11 h-10 rounded-xl cursor-pointer ${
                                     isSignUpPasswordVisible
-                                        ? " bg-[#0a0a0a] text-white"
+                                        ? " bg-gray-800 text-white"
                                         : "bg-transparent text-black"
                                 } transition-colors duration-100 `}
                                 onClick={() =>
@@ -119,9 +107,7 @@ export default function AuthPage() {
                             </button>
                         </div>
 
-                        <button className="w-full mt-2 bg-gray-800 hover:bg-gray-800/90 cursor-pointer text-white font-semibold p-2 rounded-xl  transition-colors duration-50">
-                            Sign up
-                        </button>
+                        <Button className="w-full">Sign Up</Button>
                     </div>
                 </div>
             </div>

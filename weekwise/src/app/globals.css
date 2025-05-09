@@ -10,14 +10,27 @@
     --color-foreground: var(--foreground);
     --font-sans: var(--font-geist-sans);
     --font-mono: var(--font-geist-mono);
+
+    /* ? --- CUSTOM COLORS --- */
+
+    --color-primary-50: #f2f8e9;
+    --color-primary-100: #e3f0c7;
+    --color-primary-200: #cadf95;
+    --color-primary-300: #adc861;
+    --color-primary-400: #8cab3a;
+    --color-primary-500: #4e6813;
+    --color-primary-600: #405510;
+    --color-primary-700: #32420d;
+    --color-primary-800: #232e09;
+    --color-primary-900: #141a05;
 }
 
-/* @media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
     :root {
         --background: #0a0a0a;
         --foreground: #ededed;
     }
-} */
+}
 
 body {
     background: var(--background);
@@ -30,4 +43,8 @@ button,
 a {
     /* background: #ff000010; */
     /* border: 0.1px dashed #ff0000; */
+}
+
+button {
+    cursor: pointer;
 }

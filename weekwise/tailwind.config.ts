@@ -12,7 +12,19 @@ const config: Config = {
         extend: {
             // You can extend your theme here
             colors: {
-                lineGlow: "#CEF17B",
+                primary: {
+                    50: "#f2f8e9",
+                    100: "#e3f0c7",
+                    200: "#cadf95",
+                    300: "#adc861",
+                    400: "#8cab3a",
+                    500: "#4E6813", // your base primary
+                    600: "#405510",
+                    700: "#32420d",
+                    800: "#232e09",
+                    900: "#141a05",
+                },
+                somecolor: "#4E6813",
             },
         },
     },
