@@ -13,7 +13,7 @@ export default function AuthPage() {
         useState(false);
 
     return (
-        <div className="m-auto bg-center h-dvh  flex flex-col justify-between md:w-9/12 lg:w-7/12">
+        <div className="m-auto bg-center h-dvh flex flex-col justify-between md:w-9/12 lg:w-7/12">
             <div className="h-10 w-10 bg-red-300/50"></div>
             <div className="flex flex-col gap-8">
                 {/* // ? header section */}

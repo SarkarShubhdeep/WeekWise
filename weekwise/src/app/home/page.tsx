@@ -1,11 +1,37 @@
+"use client";
 import Button from "@/components/Button";
 import TextField from "@/components/TextField";
-import React from "react";
+import WeekView from "@/sections/WeekView";
+import React, { useState } from "react";
 import * as Icon from "react-feather";
 
 export default function HomePage() {
+    const [weekOffset, setWeekOffset] = useState(0);
+
+    const today = new Date();
+    const todayLabel = today.toLocaleString("default", {
+        weekday: "long",
+        month: "short",
+        day: "numeric",
+    });
+
+    const getWeekLabel = () => {
+        const today = new Date();
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(
+            today.getDate() - ((today.getDay() + 6) % 7) + weekOffset * 7
+        );
+
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+        const format = (d: Date) =>
+            d.toLocaleString("default", { month: "short", day: "numeric" });
+        return `${format(startOfWeek)} - ${format(endOfWeek)}`;
+    };
+
     return (
-        <div className="flex flex-col m-auto w-11/12 lg:w-9/12 md:w-10/12 sm:w-11/12 h-full mt-20">
+        <div className="flex flex-col m-auto w-11/12 lg:w-9/12 md:w-10/12 sm:w-11/12 h-full mt-20 ">
             <div className="relative w-full">
                 <div className="absolute bottom-1 w-full">
                     <span className="bg-red-200 lg:hidden md:hidden sm:hidden xl:block">
@@ -28,23 +54,27 @@ export default function HomePage() {
                 {/* //? Today's day 
                 // todo: on click will switch view to current week 
                 */}
-                <div className="flex flex-col gap-2 w-fit">
-                    <div className="flex items-center text-2xl font-bold gap-2">
-                        Wednesday
+                <div
+                    className="flex flex-col gap-2 w-fit cursor-pointer"
+                    onClick={() => setWeekOffset(0)}
+                    title="Go to current week"
+                >
+                    <div className="flex items-center text-2xl font-semibold gap-2">
+                        {todayLabel}
                         <div className="h-5 w-5 bg-amber-600 rounded-full"></div>
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-2">
-                    <div className="h-16 w-16 bg-red-200 border-1 border-gray-300 rounded-full"></div>
+                <div className="text-xl font-semibold flex justify-center items-center h-14 w-14 rounded-full border-1 hover:ring-3 ring-primary-400 ring-offset-3 hover:scale-90 transition-all duration-100 cursor-pointer">
+                    SS
                 </div>
             </nav>
 
             {/* //? --------ADD NEW TASK BAR & TASK OPTIONS--------- */}
-            <div className="flex items-center justify-between w-full h-10  mt-5 ">
+            <div className="flex items-center justify-between w-full h-10 mt-5">
                 <div className="flex gap-2">
                     {/* // todo: will open up a small dialog box to add task  */}
-                    <button className="flex items-center ps-2 py-2 pe-3 gap-1 bg-primary-500 hover:bg-primary-700 text-white rounded-full transition-colors duration-100">
+                    <button className="flex text-sm items-center ps-2 py-2 pe-3 gap-1 bg-primary-500 hover:bg-primary-700 text-white rounded-full transition-colors duration-100">
                         <Icon.Plus height={20} />
                         Add task
                     </button>
@@ -70,20 +100,31 @@ export default function HomePage() {
 
                     {/* // todo: week switcher */}
                     <div className="flex items-center gap-0 bg-gray-200 rounded-full text-sm hover:gap-2 transition-all duration-100">
-                        <button className="hover:bg-gray-700  hover:text-white  p-2 rounded-full transition-colors duration-100">
+                        <button
+                            className="hover:bg-gray-700 hover:text-white p-2 rounded-full"
+                            onClick={() => setWeekOffset((prev) => prev - 1)}
+                        >
                             <Icon.ChevronLeft height={20} />
                         </button>
-                        may 5 - sun 11
-                        <button className="hover:bg-gray-700 hover:text-white p-2 rounded-full transition-colors duration-100">
+
+                        {getWeekLabel()}
+
+                        <button
+                            className="hover:bg-gray-700 hover:text-white p-2 rounded-full"
+                            onClick={() => setWeekOffset((prev) => prev + 1)}
+                        >
                             <Icon.ChevronRight height={20} />
                         </button>
                     </div>
                 </div>
             </div>
 
+            <div className="border-t-1 mt-4 border-gray-200"></div>
+
             {/* //? --------WEEK / DAYS (min 3 days, max 7 days) TASKS SECTION--------- */}
-            <div className="w-full h-10 bg-red-100 mt-5">
+            <div className="w-full mt-10">
                 {/* 7-day (view switchable to 7, 6, 5, 4, 3 days)  */}
+                <WeekView weekOffset={weekOffset} />
             </div>
         </div>
     );
