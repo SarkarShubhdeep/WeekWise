@@ -61,23 +61,13 @@ export default function WeekView({ weekOffset }: WeekViewProps) {
                             <span className="font-semibold">{day.name}</span>
                             <span className="">{day.date}</span>
                         </div>
-                        <div className="flex flex-col gap-2 ">
+                        <div className="flex flex-col gap-1 ">
                             {sampleTasks.map((task, i) => (
                                 <TaskCard
                                     key={i}
                                     title={task}
                                     datetime="10:00 AM"
                                 />
-                                // <div
-                                //     key={i}
-                                //     className="bg-white border-1 border-gray-100 px-2 py-2 text-gray-900 rounded-md hover:shadow-md hover:-translate-y-0.5 hover:border-transparent transition-all duration-100"
-                                //     onClick={() => alert("Task card clicked")}
-                                //     onDoubleClick={() =>
-                                //         alert("Task card double clicked")
-                                //     }
-                                // >
-                                //     {task}
-                                // </div>
                             ))}
                         </div>
                     </div>
