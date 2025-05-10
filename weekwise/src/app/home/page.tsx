@@ -4,10 +4,23 @@ import TextField from "@/components/TextField";
 import { supabase } from "@/lib/supabaseClient";
 import WeekView from "@/sections/WeekView";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import * as Icon from "react-feather";
 
 export default function HomePage() {
+    const [weekOffset, setWeekOffset] = useState(0);
+    // ? getting the direction of week switching back and forward
+    const [direction, setDirection] = useState<"forward" | "backward">(
+        "forward"
+    );
+    const prevOffset = useRef(0);
+
+    const handleWeekChange = (newOffset: number) => {
+        setDirection(newOffset > prevOffset.current ? "forward" : "backward");
+        prevOffset.current = newOffset;
+        setWeekOffset(newOffset);
+    };
+
     const [loading, setLoading] = useState(true);
     // ? next router
     const router = useRouter();
@@ -27,8 +40,6 @@ export default function HomePage() {
 
         checkSession();
     }, [router]);
-
-    const [weekOffset, setWeekOffset] = useState(0);
 
     const today = new Date();
     const todayLabel = today.toLocaleString("default", {
@@ -60,7 +71,7 @@ export default function HomePage() {
     return (
         <main className="animate-fade-in min-h-screen p-6">
             <div className="flex flex-col m-auto w-11/12 lg:w-9/12 md:w-10/12 sm:w-11/12 h-full mt-20 ">
-                <div className="relative w-full">
+                {/* <div className="relative w-full">
                     <div className="absolute bottom-1 w-full">
                         <span className="bg-red-200 lg:hidden md:hidden sm:hidden xl:block">
                             xl or greater
@@ -75,7 +86,7 @@ export default function HomePage() {
                             sm
                         </span>
                     </div>
-                </div>
+                </div> */}
 
                 {/* //? --------TOP NAV--------- */}
                 <nav className="flex items-center w-full justify-between ">
@@ -83,7 +94,7 @@ export default function HomePage() {
                 // todo: on click will switch view to current week 
                 */}
                     <div
-                        className="flex flex-col gap-2 w-fit cursor-pointer"
+                        className="flex flex-col gap-2 w-fit cursor-pointer "
                         onClick={() => setWeekOffset(0)}
                         title="Go to current week"
                     >
@@ -94,7 +105,7 @@ export default function HomePage() {
                     </div>
 
                     <div
-                        className="text-xl font-semibold flex justify-center items-center h-14 w-14 rounded-full border-1 hover:ring-3 ring-primary-400 ring-offset-3 hover:scale-90 transition-all duration-100 cursor-pointer"
+                        className="text-xl font-semibold flex justify-center items-center h-14 w-14 rounded-full border-1 hover:ring-3 ring-gray-700 ring-offset-3 hover:scale-90 transition-all duration-100 cursor-pointer"
                         onClick={() => router.push("/userpreferences")}
                     >
                         SS
@@ -133,9 +144,7 @@ export default function HomePage() {
                         <div className="flex items-center gap-0 bg-gray-200 rounded-full text-sm hover:gap-2 transition-all duration-100">
                             <button
                                 className="hover:bg-gray-700 hover:text-white p-2 rounded-full"
-                                onClick={() =>
-                                    setWeekOffset((prev) => prev - 1)
-                                }
+                                onClick={() => handleWeekChange(weekOffset - 1)} // 👈 Backward
                             >
                                 <Icon.ChevronLeft height={20} />
                             </button>
@@ -144,9 +153,7 @@ export default function HomePage() {
 
                             <button
                                 className="hover:bg-gray-700 hover:text-white p-2 rounded-full"
-                                onClick={() =>
-                                    setWeekOffset((prev) => prev + 1)
-                                }
+                                onClick={() => handleWeekChange(weekOffset + 1)} // 👈 Forward
                             >
                                 <Icon.ChevronRight height={20} />
                             </button>
@@ -159,7 +166,7 @@ export default function HomePage() {
                 {/* //? --------WEEK / DAYS (min 3 days, max 7 days) TASKS SECTION--------- */}
                 <div className="w-full mt-10">
                     {/* 7-day (view switchable to 7, 6, 5, 4, 3 days)  */}
-                    <WeekView weekOffset={weekOffset} />
+                    <WeekView weekOffset={weekOffset} direction={direction} />
                 </div>
             </div>
         </main>
