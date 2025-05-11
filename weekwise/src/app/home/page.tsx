@@ -1,13 +1,18 @@
 "use client";
 import Button from "@/components/Button";
 import TextField from "@/components/TextField";
+import ViewToggle from "@/components/ViewToggle";
 import { supabase } from "@/lib/supabaseClient";
 import WeekView from "@/sections/WeekView";
+import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import * as Icon from "react-feather";
 
 export default function HomePage() {
+    // ? State to track the selected view
+    const [currentView, setCurrentView] = useState<"week" | "all">("week");
+    // ? week switching
     const [weekOffset, setWeekOffset] = useState(0);
     // ? getting the direction of week switching back and forward
     const [direction, setDirection] = useState<"forward" | "backward">(
@@ -134,37 +139,64 @@ export default function HomePage() {
                             Show completed
                         </button>
 
+                        <button className="flex items-center px-3 py-2 bg-gray-200 rounded-full text-sm gap-1 transition-all duration-100">
+                            Show descriptions
+                        </button>
+
                         {/* // todo: create sorting otpions dropdown menu */}
                         <button className="flex items-center pe-3 py-2 ps-2 bg-gray-200 rounded-full text-sm gap-1 transition-all duration-100">
                             <Icon.ChevronDown height={20} />
                             Sort: Acs
                         </button>
-
-                        {/* // todo: week switcher */}
-                        <div className="flex items-center gap-0 bg-gray-200 rounded-full text-sm hover:gap-2 transition-all duration-100">
-                            <button
-                                className="hover:bg-gray-700 hover:text-white p-2 rounded-full"
-                                onClick={() => handleWeekChange(weekOffset - 1)} // 👈 Backward
-                            >
-                                <Icon.ChevronLeft height={20} />
-                            </button>
-
-                            {getWeekLabel()}
-
-                            <button
-                                className="hover:bg-gray-700 hover:text-white p-2 rounded-full"
-                                onClick={() => handleWeekChange(weekOffset + 1)} // 👈 Forward
-                            >
-                                <Icon.ChevronRight height={20} />
-                            </button>
-                        </div>
                     </div>
                 </div>
 
-                <div className="border-t-1 mt-4 border-gray-200"></div>
+                <div className="flex border-t-1 mt-4 gap-2 border-gray-200 pt-4">
+                    <ViewToggle
+                        current={currentView}
+                        onToggle={setCurrentView}
+                    />
+                    {/* // todo: week switcher */}
+                    <AnimatePresence mode="wait">
+                        {currentView === "week" && (
+                            <motion.div
+                                key={weekOffset}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{
+                                    duration: 0.1,
+                                    ease: "easeIn",
+                                    bounce: 0.2,
+                                }}
+                                className="flex w-fit items-center gap-0 bg-gray-200 rounded-full text-xs hover:gap-2 transition-all duration-100 h-8"
+                            >
+                                <button
+                                    className="hover:bg-gray-700 hover:text-white p-2 rounded-full"
+                                    onClick={() =>
+                                        handleWeekChange(weekOffset - 1)
+                                    }
+                                >
+                                    <Icon.ChevronLeft height={18} />
+                                </button>
+
+                                {getWeekLabel()}
+
+                                <button
+                                    className="hover:bg-gray-700 hover:text-white p-2 rounded-full"
+                                    onClick={() =>
+                                        handleWeekChange(weekOffset + 1)
+                                    }
+                                >
+                                    <Icon.ChevronRight height={18} />
+                                </button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
 
                 {/* //? --------WEEK / DAYS (min 3 days, max 7 days) TASKS SECTION--------- */}
-                <div className="w-full mt-10">
+                <div className="w-full mt-5">
                     {/* 7-day (view switchable to 7, 6, 5, 4, 3 days)  */}
                     <WeekView weekOffset={weekOffset} direction={direction} />
                 </div>
