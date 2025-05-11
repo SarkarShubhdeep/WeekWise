@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import * as Icon from "react-feather";
 import { fetchAllTasks } from "@/lib/fetchTasks";
+import SearchView from "@/sections/SearchView";
 
 interface Task {
     id: string;
@@ -72,7 +73,6 @@ export default function HomePage() {
     const [showCompleted, setShowCompleted] = useState(true);
     const [showDescriptions, setShowDescriptions] = useState(true);
 
-    // const [searchTerm, setSearchTerm] = useState("");
     const [isSearchActive, setIsSearchActive] = useState(false);
     const [active, setActive] = useState(false);
 
@@ -331,17 +331,31 @@ export default function HomePage() {
                 </div>
 
                 {/* //? --------WEEK VIEW | ALL TASKS SECTION | SEARCH VIEW --------- */}
-                <div className="w-full mt-5 max-h-[75vh] overflow-y-auto scroll-auto">
-                    {/* <WeekView weekOffset={weekOffset} direction={direction} /> */}
-
-                    <AllTaskView
+                {searchQuery.trim() ? (
+                    <SearchView
+                        query={searchQuery}
                         tasks={allTasks}
-                        showDescriptions={showDescriptions}
                         showCompleted={showCompleted}
+                        showDescriptions={showDescriptions}
                         sortBy={sortBy}
                         onToggleComplete={handleToggleComplete}
                     />
-                </div>
+                ) : (
+                    // currentView === "week" ? (
+                    //     <WeekView
+                    //         weekOffset={weekOffset}
+                    //         direction={direction}
+                    //         tasks={allTasks}
+                    //     />
+                    // ) :
+                    <AllTaskView
+                        tasks={allTasks}
+                        showCompleted={showCompleted}
+                        showDescriptions={showDescriptions}
+                        sortBy={sortBy}
+                        onToggleComplete={handleToggleComplete}
+                    />
+                )}
             </div>
         </main>
     );
