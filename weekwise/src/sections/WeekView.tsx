@@ -184,7 +184,7 @@ export default function WeekView({ weekOffset, direction }: WeekViewProps) {
                                                 key={task.id}
                                                 title={task.title}
                                                 datetime={time}
-                                                is_completed={task.is_completed}
+                                                isCompleted={task.is_completed}
                                                 onClick={() =>
                                                     setExpandedTask(task)
                                                 }

@@ -3,18 +3,31 @@ import Button from "@/components/Button";
 import TextField from "@/components/TextField";
 import ViewToggle from "@/components/ViewToggle";
 import { supabase } from "@/lib/supabaseClient";
+import AllTaskView from "@/sections/AllTaskView";
 import WeekView from "@/sections/WeekView";
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useRef, useState } from "react";
 import * as Icon from "react-feather";
+import { fetchAllTasks } from "@/lib/fetchTasks";
+
+interface Task {
+    id: string;
+    title: string;
+    description?: string;
+    date?: string;
+    time?: string;
+    is_completed: boolean;
+}
 
 export default function HomePage() {
-    // ? State to track the selected view
+    const router = useRouter();
+
+    // View toggle: week | all
     const [currentView, setCurrentView] = useState<"week" | "all">("week");
-    // ? week switching
+
+    // Week offset for week switcher
     const [weekOffset, setWeekOffset] = useState(0);
-    // ? getting the direction of week switching back and forward
     const [direction, setDirection] = useState<"forward" | "backward">(
         "forward"
     );
@@ -26,33 +39,92 @@ export default function HomePage() {
         setWeekOffset(newOffset);
     };
 
+    // Auth & session check
     const [loading, setLoading] = useState(true);
-    // ? next router
-    const router = useRouter();
-
-    // ?checking if the user is signed in / persistent session
     useEffect(() => {
         const checkSession = async () => {
-            const { data, error } = await supabase.auth.getSession();
-            const session = data.session;
-
-            if (!session) {
+            const { data } = await supabase.auth.getSession();
+            if (!data.session) {
                 router.replace("/auth");
             } else {
                 setLoading(false);
             }
         };
-
         checkSession();
     }, [router]);
 
+    // Task data
+    const [allTasks, setAllTasks] = useState<Task[]>([]);
+
+    useEffect(() => {
+        const loadTasks = async () => {
+            const data = await fetchAllTasks();
+            setAllTasks(data);
+        };
+        loadTasks();
+    }, []);
+
+    // ? Filtering/searching/sorting
+    const [sortBy, setSortBy] = useState<
+        "date-asc" | "date-desc" | "title-asc"
+    >("date-asc");
+    const [showCompleted, setShowCompleted] = useState(true);
+    const [showDescriptions, setShowDescriptions] = useState(true);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const filteredTasks = allTasks
+        .filter((task) => {
+            const matchesSearch = task.title
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase());
+            const matchesCompleted = showCompleted || !task.is_completed;
+            return matchesSearch && matchesCompleted;
+        })
+        .sort((a, b) => {
+            switch (sortBy) {
+                case "title-asc":
+                    return a.title.localeCompare(b.title);
+                case "date-desc":
+                    return (b.date || "").localeCompare(a.date || "");
+                case "date-asc":
+                default:
+                    return (a.date || "").localeCompare(b.date || "");
+            }
+        });
+
+    // ? View options
+    const [showTime, setShowTime] = useState(true);
+    const [showDate, setShowDate] = useState(true);
+    const [showDescription, setShowDescription] = useState(true);
+
     const today = new Date();
-    const todayLabel = today.toLocaleString("default", {
+    const todayLabel = today.toLocaleDateString("default", {
         weekday: "long",
         month: "short",
         day: "numeric",
     });
 
+    // ? HANDLEONCOMPLETE FOR TASKCARD IN ALLTASKVIEW
+    const handleToggleComplete = async (id: string, newStatus: boolean) => {
+        const { error } = await supabase
+            .from("tasks")
+            .update({ is_completed: newStatus })
+            .eq("id", id);
+
+        if (error) {
+            console.error("Failed to update task", error);
+            return;
+        }
+
+        setAllTasks((prev) =>
+            prev.map((task) =>
+                task.id === id ? { ...task, is_completed: newStatus } : task
+            )
+        );
+    };
+
+    // Week label
     const getWeekLabel = () => {
         const today = new Date();
         const startOfWeek = new Date(today);
@@ -68,31 +140,10 @@ export default function HomePage() {
         return `${format(startOfWeek)} - ${format(endOfWeek)}`;
     };
 
-    // ? Loading while user is fetched
-    if (loading) {
-        return <div className="p-4">Loading...</div>;
-    }
-
+    if (loading) return <div className="p-4">Loading...</div>;
     return (
         <main className="animate-fade-in min-h-screen p-6">
             <div className="flex flex-col m-auto w-11/12 lg:w-9/12 md:w-10/12 sm:w-11/12 h-full mt-20 ">
-                {/* <div className="relative w-full">
-                    <div className="absolute bottom-1 w-full">
-                        <span className="bg-red-200 lg:hidden md:hidden sm:hidden xl:block">
-                            xl or greater
-                        </span>
-                        <span className="bg-red-200 lg:block md:hidden sm:hidden xl:hidden">
-                            lg
-                        </span>
-                        <span className="bg-red-200 lg:hidden md:block sm:hidden xl:hidden">
-                            md
-                        </span>
-                        <span className="bg-red-200 lg:hidden md:hidden sm:block xl:hidden">
-                            sm
-                        </span>
-                    </div>
-                </div> */}
-
                 {/* //? --------TOP NAV--------- */}
                 <nav className="flex items-center w-full justify-between ">
                     {/* //? Today's day 
@@ -157,48 +208,39 @@ export default function HomePage() {
                         onToggle={setCurrentView}
                     />
                     {/* // todo: week switcher */}
-                    <AnimatePresence mode="wait">
-                        {currentView === "week" && (
-                            <motion.div
-                                key={weekOffset}
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                transition={{
-                                    duration: 0.1,
-                                    ease: "easeIn",
-                                    bounce: 0.2,
-                                }}
-                                className="flex w-fit items-center gap-0 bg-gray-200 rounded-full text-xs hover:gap-2 transition-all duration-100 h-8"
+
+                    {currentView === "week" && (
+                        <div className="flex w-fit items-center gap-0 bg-gray-200 rounded-full text-xs hover:gap-2 transition-all duration-100 h-8">
+                            <button
+                                className="hover:bg-gray-700 hover:text-white p-2 rounded-full"
+                                onClick={() => handleWeekChange(weekOffset - 1)}
                             >
-                                <button
-                                    className="hover:bg-gray-700 hover:text-white p-2 rounded-full"
-                                    onClick={() =>
-                                        handleWeekChange(weekOffset - 1)
-                                    }
-                                >
-                                    <Icon.ChevronLeft height={18} />
-                                </button>
+                                <Icon.ChevronLeft height={18} />
+                            </button>
 
-                                {getWeekLabel()}
+                            {getWeekLabel()}
 
-                                <button
-                                    className="hover:bg-gray-700 hover:text-white p-2 rounded-full"
-                                    onClick={() =>
-                                        handleWeekChange(weekOffset + 1)
-                                    }
-                                >
-                                    <Icon.ChevronRight height={18} />
-                                </button>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                            <button
+                                className="hover:bg-gray-700 hover:text-white p-2 rounded-full"
+                                onClick={() => handleWeekChange(weekOffset + 1)}
+                            >
+                                <Icon.ChevronRight height={18} />
+                            </button>
+                        </div>
+                    )}
                 </div>
 
-                {/* //? --------WEEK / DAYS (min 3 days, max 7 days) TASKS SECTION--------- */}
-                <div className="w-full mt-5">
-                    {/* 7-day (view switchable to 7, 6, 5, 4, 3 days)  */}
-                    <WeekView weekOffset={weekOffset} direction={direction} />
+                {/* //? --------WEEK VIEW | ALL TASKS SECTION--------- */}
+                <div className="w-full mt-5 max-h-[75vh] overflow-y-auto scroll-auto">
+                    {/* <WeekView weekOffset={weekOffset} direction={direction} /> */}
+
+                    <AllTaskView
+                        tasks={allTasks}
+                        showDescriptions={showDescriptions}
+                        showCompleted={showCompleted}
+                        sortBy={sortBy}
+                        onToggleComplete={handleToggleComplete}
+                    />
                 </div>
             </div>
         </main>
