@@ -33,6 +33,7 @@ export default function HomePage() {
     );
     const prevOffset = useRef(0);
 
+    // ? HANDLING WEEK CHANGE
     const handleWeekChange = (newOffset: number) => {
         setDirection(newOffset > prevOffset.current ? "forward" : "backward");
         prevOffset.current = newOffset;
@@ -70,8 +71,36 @@ export default function HomePage() {
     >("date-asc");
     const [showCompleted, setShowCompleted] = useState(true);
     const [showDescriptions, setShowDescriptions] = useState(true);
+
+    // const [searchTerm, setSearchTerm] = useState("");
+    const [isSearchActive, setIsSearchActive] = useState(false);
+    const [active, setActive] = useState(false);
+
+    const [isExpanded, setIsExpanded] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-    const [searchTerm, setSearchTerm] = useState("");
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (isExpanded && searchInputRef.current) {
+            searchInputRef.current.focus();
+        }
+    }, [isExpanded]);
+
+    const handleBlurIfEmpty = () => {
+        if (searchQuery.trim() === "") {
+            setIsExpanded(false);
+        }
+    };
+
+    const clearAndCollapse = () => {
+        setSearchQuery("");
+        setIsExpanded(false);
+    };
+
+    const toggleExpansion = () => {
+        if (!isExpanded) setIsExpanded(true);
+        else if (searchQuery.trim() === "") setIsExpanded(false);
+    };
 
     const filteredTasks = allTasks
         .filter((task) => {
@@ -92,6 +121,22 @@ export default function HomePage() {
                     return (a.date || "").localeCompare(b.date || "");
             }
         });
+
+    useEffect(() => {
+        const handleKeyShortcut = (e: KeyboardEvent) => {
+            const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+            if (
+                (isMac && e.metaKey && e.key === "k") ||
+                (!isMac && e.ctrlKey && e.key === "k")
+            ) {
+                e.preventDefault(); // prevent browser default
+                setIsExpanded(true);
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyShortcut);
+        return () => window.removeEventListener("keydown", handleKeyShortcut);
+    }, []);
 
     // ? View options
     const [showTime, setShowTime] = useState(true);
@@ -178,11 +223,66 @@ export default function HomePage() {
                         </button>
 
                         {/* // todo: expands open an input to search */}
-                        <div className="">
-                            <button className="border-1 border-gray-700 rounded-full p-2 hover:bg-gray-700 hover:text-white transition-colors duration-100">
-                                <Icon.Search height={20} />
-                            </button>
-                        </div>
+
+                        <motion.div
+                            className="flex items-center justify-center border-1 border-gray-700 rounded-full bg-white overflow-hidden"
+                            animate={{ width: isExpanded ? 280 : 38 }}
+                            transition={{
+                                type: "spring",
+                                stiffness: 300,
+                                damping: 20,
+                            }}
+                        >
+                            <input
+                                ref={searchInputRef}
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onBlur={handleBlurIfEmpty}
+                                placeholder="Search tasks..."
+                                className={`flex-1 text-sm outline-none h-full ${
+                                    isExpanded ? "ps-3" : "p-0"
+                                }`}
+                                style={{
+                                    opacity: isExpanded ? 1 : 0,
+                                    width: isExpanded ? "100%" : 0,
+                                    transition: "opacity 0.2s ease",
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Escape") {
+                                        setIsExpanded(false);
+                                        setSearchQuery("");
+                                    }
+                                }}
+                            />
+                            {isExpanded && searchQuery ? (
+                                <button
+                                    onClick={clearAndCollapse}
+                                    className="p-2 rounded-full text-gray-700 hover:bg-gray-200"
+                                    type="button"
+                                >
+                                    <Icon.X size={18} />
+                                </button>
+                            ) : (
+                                <button
+                                    className="p-2 rounded-full text-gray-700 hover:bg-gray-200"
+                                    onClick={toggleExpansion}
+                                    type="button"
+                                >
+                                    <Icon.Search size={18} />
+                                </button>
+                            )}
+                        </motion.div>
+                        {isExpanded ? (
+                            ""
+                        ) : (
+                            <div className="text-xs italic  flex items-center opacity-50">
+                                <span className="font-mono pe-2 font-semibold">
+                                    cmd + k
+                                </span>{" "}
+                                to search your tasks
+                            </div>
+                        )}
                     </div>
                     <div className="flex gap-2">
                         {/* // todo: show completed task bg toggle  */}
@@ -230,7 +330,7 @@ export default function HomePage() {
                     )}
                 </div>
 
-                {/* //? --------WEEK VIEW | ALL TASKS SECTION--------- */}
+                {/* //? --------WEEK VIEW | ALL TASKS SECTION | SEARCH VIEW --------- */}
                 <div className="w-full mt-5 max-h-[75vh] overflow-y-auto scroll-auto">
                     {/* <WeekView weekOffset={weekOffset} direction={direction} /> */}
 
