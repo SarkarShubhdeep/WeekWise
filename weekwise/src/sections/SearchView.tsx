@@ -18,6 +18,7 @@ interface SearchViewProps {
     showCompleted: boolean;
     sortBy: "date-asc" | "date-desc" | "title-asc";
     onToggleComplete: (id: string, newStatus: boolean) => void;
+    onExpand?: (task: Task, rect: DOMRect) => void;
 }
 
 export default function SearchView({
@@ -27,6 +28,7 @@ export default function SearchView({
     showCompleted,
     sortBy,
     onToggleComplete,
+    onExpand,
 }: SearchViewProps) {
     const filtered = tasks
         .filter((task) => {
@@ -49,7 +51,8 @@ export default function SearchView({
 
     if (!filtered.length) {
         return (
-            <div className="text-sm text-gray-500 px-4 py-2">
+            <div className="text-2xl h-full mt-10 text-gray-400 px-4 py-6 flex items-center gap-3">
+                <span className="text-5xl block">🤔</span>
                 No tasks matched your search.
             </div>
         );
@@ -59,8 +62,8 @@ export default function SearchView({
         <div className="flex flex-col gap-1 w-full scroll-auto overflow-visible bg-white/20 p-2">
             {filtered.map((task) => (
                 <TaskCard
-                    className="max-w-[400px]"
                     key={task.id}
+                    className="max-w-[400px]"
                     title={task.title}
                     date={task.date}
                     time={task.time}
@@ -68,11 +71,11 @@ export default function SearchView({
                         showDescriptions ? task.description : undefined
                     }
                     isCompleted={task.is_completed}
-                    showCheckbox={true}
+                    showCheckbox
                     onCheckboxToggle={() =>
                         onToggleComplete(task.id, !task.is_completed)
                     }
-                    onClick={() => alert("Open task dialog here")}
+                    onExpand={(rect) => onExpand?.(task, rect)}
                 />
             ))}
         </div>

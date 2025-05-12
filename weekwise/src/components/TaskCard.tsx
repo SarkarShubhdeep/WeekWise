@@ -9,9 +9,9 @@ interface TaskCardProps {
     description?: string;
     isCompleted?: boolean;
     showCheckbox?: boolean;
-    onClick?: () => void;
     onDoubleClick?: () => void;
     onCheckboxToggle?: () => void;
+    onExpand?: (rect: DOMRect) => void;
     className?: string;
 }
 
@@ -22,17 +22,27 @@ const TaskCard: React.FC<TaskCardProps> = ({
     description,
     isCompleted,
     showCheckbox = false,
-    onClick,
     onDoubleClick,
     onCheckboxToggle,
+    onExpand,
     className = "",
 }) => {
+    const cardRef = React.useRef<HTMLDivElement | null>(null);
+
+    const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (onExpand && cardRef.current) {
+            const rect = cardRef.current.getBoundingClientRect();
+            onExpand(rect);
+        }
+    };
+
     return (
         <div
+            ref={cardRef}
             className={`${className} bg-white border-1 border-gray-100 px-3 py-2 rounded-md hover:shadow-md 
                 hover:-translate-y-0.5 hover:border-transparent transition-all duration-100 
-                cursor-pointer flex gap-3 items-start `}
-            onClick={onClick}
+                cursor-pointer flex gap-3 items-start`}
+            onClick={handleClick}
             onDoubleClick={onDoubleClick}
         >
             {showCheckbox && (
@@ -40,7 +50,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                     type="checkbox"
                     checked={isCompleted}
                     onChange={onCheckboxToggle}
-                    onClick={(e) => e.stopPropagation()} // prevent parent click
+                    onClick={(e) => e.stopPropagation()}
                     className="mt-1 h-4 w-4 text-primary-500"
                 />
             )}
@@ -52,11 +62,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         : "opacity-100"
                 }`}
             >
-                <div className=" font-medium">{title}</div>
+                <div className="font-medium">{title}</div>
 
                 {(date || time) && (
                     <div className="text-xs text-blue-600 mt-1">
-                        {[date, time].filter(Boolean).join(" • ")}
+                        {[time, date].filter(Boolean).join(" - ")}
                     </div>
                 )}
 

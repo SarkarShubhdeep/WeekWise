@@ -11,6 +11,7 @@ import React, { useEffect, useRef, useState } from "react";
 import * as Icon from "react-feather";
 import { fetchAllTasks } from "@/lib/fetchTasks";
 import SearchView from "@/sections/SearchView";
+import ExpandedTaskCard from "@/components/ExpandedTaskCard";
 
 interface Task {
     id: string;
@@ -137,6 +138,15 @@ export default function HomePage() {
         window.addEventListener("keydown", handleKeyShortcut);
         return () => window.removeEventListener("keydown", handleKeyShortcut);
     }, []);
+
+    // ? Expanded task card
+    const [expandedTask, setExpandedTask] = useState<Task | null>(null);
+    const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
+
+    const handleExpandTask = (task: Task, rect: DOMRect) => {
+        setExpandedTask(task);
+        setAnchorRect(rect);
+    };
 
     // ? View options
     const [showTime, setShowTime] = useState(true);
@@ -331,32 +341,100 @@ export default function HomePage() {
                 </div>
 
                 {/* //? --------WEEK VIEW | ALL TASKS SECTION | SEARCH VIEW --------- */}
-                {searchQuery.trim() ? (
-                    <SearchView
-                        query={searchQuery}
-                        tasks={allTasks}
-                        showCompleted={showCompleted}
-                        showDescriptions={showDescriptions}
-                        sortBy={sortBy}
-                        onToggleComplete={handleToggleComplete}
-                    />
-                ) : (
-                    // currentView === "week" ? (
-                    //     <WeekView
-                    //         weekOffset={weekOffset}
-                    //         direction={direction}
-                    //         tasks={allTasks}
-                    //     />
-                    // ) :
-                    <AllTaskView
-                        tasks={allTasks}
-                        showCompleted={showCompleted}
-                        showDescriptions={showDescriptions}
-                        sortBy={sortBy}
-                        onToggleComplete={handleToggleComplete}
-                    />
-                )}
+                <div className="max-h-[75vh] overflow-y-auto">
+                    {/* <div className="text-2xl font-semibold">View Title</div> */}
+                    {searchQuery.trim() ? (
+                        <SearchView
+                            query={searchQuery}
+                            tasks={allTasks}
+                            showCompleted={showCompleted}
+                            showDescriptions={showDescriptions}
+                            sortBy={sortBy}
+                            onToggleComplete={handleToggleComplete}
+                            onExpand={handleExpandTask} // ✅ THIS
+                        />
+                    ) : (
+                        // currentView === "week" ? (
+                        //     <WeekView
+                        //         weekOffset={weekOffset}
+                        //         direction={direction}
+                        //         tasks={allTasks}
+                        //     />
+                        // ) :
+                        <AllTaskView
+                            tasks={allTasks}
+                            showCompleted={showCompleted}
+                            showDescriptions={showDescriptions}
+                            sortBy={sortBy}
+                            onToggleComplete={handleToggleComplete}
+                            onExpand={handleExpandTask}
+                        />
+                    )}
+                </div>
             </div>
+            {expandedTask && anchorRect && (
+                <ExpandedTaskCard
+                    isOpen
+                    anchorRect={anchorRect}
+                    onClose={() => setExpandedTask(null)}
+                    initialData={{
+                        title: expandedTask.title,
+                        date: expandedTask.date,
+                        time: expandedTask.time,
+                        description: expandedTask.description ?? "",
+                        is_completed: expandedTask.is_completed,
+                    }}
+                    onSave={async (updates) => {
+                        console.log("Saving updates:", updates);
+                        const id = expandedTask.id;
+
+                        // Convert empty strings to null for valid DB input
+                        const cleanUpdates = {
+                            ...updates,
+                            date:
+                                updates.date?.trim() === ""
+                                    ? null
+                                    : updates.date,
+                            time:
+                                updates.time?.trim() === ""
+                                    ? null
+                                    : updates.time,
+                        };
+
+                        const user = await supabase.auth.getUser();
+                        const user_id = user.data.user?.id;
+
+                        const { error } = await supabase
+                            .from("tasks")
+                            .update(cleanUpdates)
+                            .eq("id", id)
+                            .eq("user_id", user_id);
+
+                        console.log("Trying to update task:", {
+                            id,
+                            user_id,
+                            cleanUpdates,
+                        });
+
+                        if (error) {
+                            console.error("Update failed:", error);
+                        } else {
+                            setAllTasks((prev) =>
+                                prev.map((task) =>
+                                    task.id === id
+                                        ? {
+                                              ...task,
+                                              ...(cleanUpdates as Partial<Task>),
+                                          }
+                                        : task
+                                )
+                            );
+                        }
+
+                        setExpandedTask(null);
+                    }}
+                />
+            )}
         </main>
     );
 }

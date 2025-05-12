@@ -5,35 +5,30 @@ import { AnimatePresence, motion, Variants } from "framer-motion";
 import TextField from "@/components/TextField";
 import Button from "@/components/Button";
 
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-
-export interface ExpandedTaskCardProps {
+interface ExpandedTaskCardProps {
     isOpen: boolean;
     onClose: () => void;
     onSave: (data: {
         title: string;
-        datetime: string;
+        date?: string;
+        time?: string;
         description: string;
         is_completed: boolean;
     }) => void;
     initialData: {
         title: string;
-        datetime: string;
+        date?: string;
+        time?: string;
         description: string;
         is_completed: boolean;
     };
+    anchorRect: DOMRect;
 }
 
-const backdropVariants: Variants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1 },
-};
-
 const modalVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.8, y: 20 },
+    hidden: { opacity: 0, scale: 0.95, y: 10 },
     visible: { opacity: 1, scale: 1, y: 0 },
-    exit: { opacity: 0, scale: 0.8, y: 20 },
+    exit: { opacity: 0, scale: 0.95, y: 10 },
 };
 
 const ExpandedTaskCard: FC<ExpandedTaskCardProps> = ({
@@ -41,109 +36,134 @@ const ExpandedTaskCard: FC<ExpandedTaskCardProps> = ({
     onClose,
     onSave,
     initialData,
+    anchorRect,
 }) => {
     const [title, setTitle] = useState(initialData.title);
-    const [datetime, setDatetime] = useState(initialData.datetime);
+    const [date, setDate] = useState(initialData.date || "");
+    const [time, setTime] = useState(initialData.time || "");
     const [description, setDescription] = useState(initialData.description);
     const [completed, setCompleted] = useState(initialData.is_completed);
 
-    // Only reset when the modal opens
     useEffect(() => {
         if (isOpen) {
             setTitle(initialData.title);
-            setDatetime(initialData.datetime);
+            setDate(initialData.date || "");
+            setTime(initialData.time || "");
             setDescription(initialData.description);
             setCompleted(initialData.is_completed);
         }
-    }, [isOpen]);
+    }, [isOpen, initialData]);
 
     const handleSave = () => {
-        onSave({ title, datetime, description, is_completed: completed });
+        onSave({ title, date, time, description, is_completed: completed });
         onClose();
     };
 
+    const cardWidth = 300;
+    const cardHeight = 380;
+
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    const fitsRight = anchorRect.right + cardWidth + 12 < viewportWidth;
+    const fitsLeft = anchorRect.left - cardWidth - 12 > 0;
+
+    const left = fitsRight
+        ? anchorRect.right + 12
+        : fitsLeft
+        ? anchorRect.left - cardWidth - 12
+        : (viewportWidth - cardWidth) / 2;
+
+    let top = anchorRect.top;
+    const buffer = 100;
+
+    if (top + cardHeight + buffer > viewportHeight) {
+        top = viewportHeight - cardHeight - buffer;
+    }
+    if (top < buffer) {
+        top = buffer;
+    }
     return (
         <AnimatePresence>
             {isOpen && (
                 <motion.div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-                    variants={backdropVariants}
+                    className="fixed z-50 bg-white shadow-lg rounded-xl border p-4 w-[300px] max-h-[90vh] overflow-y-auto"
+                    style={{ top, left }}
+                    variants={modalVariants}
                     initial="hidden"
                     animate="visible"
-                    exit="hidden"
-                    onClick={onClose}
+                    exit="exit"
+                    transition={{ duration: 0.2 }}
+                    onClick={(e) => e.stopPropagation()}
                 >
-                    <motion.div
-                        className="relative w-full max-w-md rounded-3xl bg-white p-6 shadow-xl"
-                        variants={modalVariants}
-                        initial="hidden"
-                        animate="visible"
-                        exit="exit"
-                        transition={{ duration: 0.2 }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <h2 className="mb-4 text-xl font-semibold">
-                            Edit Task
-                        </h2>
+                    <h2 className="mb-4 text-xl font-semibold">Edit Task</h2>
 
-                        <div className="space-y-4">
-                            <TextField
-                                className="w-full"
-                                placeholder="Title"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                            />
+                    <div className="space-y-4">
+                        <TextField
+                            className="w-full"
+                            placeholder="Title"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                        />
 
-                            <div>
-                                <label className="mb-1 block text-sm text-gray-600">
-                                    Date &amp; Time
+                        <div className="flex gap-2">
+                            <div className="flex-1">
+                                <label className="block text-sm text-gray-600 mb-1">
+                                    Date
                                 </label>
                                 <input
-                                    type="datetime-local"
-                                    className="w-full rounded-xl border border-gray-200 p-2"
-                                    value={datetime}
-                                    onChange={(e) =>
-                                        setDatetime(e.target.value)
-                                    }
+                                    type="date"
+                                    className="w-full border rounded-xl p-2"
+                                    value={date}
+                                    onChange={(e) => setDate(e.target.value)}
                                 />
                             </div>
-
-                            <div>
-                                <label className="mb-1 block text-sm text-gray-600">
-                                    Description
+                            <div className="flex-1">
+                                <label className="block text-sm text-gray-600 mb-1">
+                                    Time
                                 </label>
-                                <textarea
-                                    className="w-full rounded-xl border-gray-200 border p-2 h-24 resize-none"
-                                    value={description}
-                                    onChange={(e) =>
-                                        setDescription(e.target.value)
-                                    }
+                                <input
+                                    type="time"
+                                    className="w-full border rounded-xl p-2"
+                                    value={time}
+                                    onChange={(e) => setTime(e.target.value)}
                                 />
                             </div>
+                        </div>
 
-                            <label className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    checked={completed}
-                                    onChange={() => setCompleted((c) => !c)}
-                                    className="h-4 w-4 rounded border-gray-300 text-primary-500 focus:ring-primary-400"
-                                />
-                                <span className="text-sm text-gray-700">
-                                    Completed
-                                </span>
+                        <div>
+                            <label className="block text-sm text-gray-600 mb-1">
+                                Description
                             </label>
+                            <textarea
+                                className="w-full border rounded-xl p-2 h-24 resize-none"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                            />
                         </div>
 
-                        <div className="mt-6 flex justify-end gap-2">
-                            <button
-                                className="bg-transparent p-2 text-gray-800 hover:bg-gray-200 rounded-xl"
-                                onClick={onClose}
-                            >
-                                Cancel
-                            </button>
-                            <Button onClick={handleSave}>Save</Button>
-                        </div>
-                    </motion.div>
+                        <label className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                checked={completed}
+                                onChange={() => setCompleted((c) => !c)}
+                                className="h-4 w-4 rounded border-gray-300 text-primary-500 focus:ring-primary-400"
+                            />
+                            <span className="text-sm text-gray-700">
+                                Completed
+                            </span>
+                        </label>
+                    </div>
+
+                    <div className="mt-6 flex justify-end gap-2">
+                        <button
+                            className="bg-transparent p-2 text-gray-800 hover:bg-gray-200 rounded-xl"
+                            onClick={onClose}
+                        >
+                            Cancel
+                        </button>
+                        <Button onClick={handleSave}>Save</Button>
+                    </div>
                 </motion.div>
             )}
         </AnimatePresence>

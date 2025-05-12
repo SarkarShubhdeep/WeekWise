@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import TaskCard from "@/components/TaskCard";
-import { supabase } from "@/lib/supabaseClient";
 
 interface Task {
     id: string;
@@ -19,6 +17,7 @@ interface AllTaskViewProps {
     showCompleted: boolean;
     sortBy: "date-asc" | "date-desc" | "title-asc";
     onToggleComplete: (id: string, newStatus: boolean) => void;
+    onExpand?: (task: Task, rect: DOMRect) => void;
 }
 
 export default function AllTaskView({
@@ -27,6 +26,7 @@ export default function AllTaskView({
     showCompleted,
     sortBy,
     onToggleComplete,
+    onExpand,
 }: AllTaskViewProps) {
     const sortedFilteredTasks = tasks
         .filter((task) => showCompleted || !task.is_completed)
@@ -36,7 +36,6 @@ export default function AllTaskView({
             } else if (sortBy === "date-desc") {
                 return (b.date || "").localeCompare(a.date || "");
             }
-            // default: date-asc
             return (a.date || "").localeCompare(b.date || "");
         });
 
@@ -65,7 +64,7 @@ export default function AllTaskView({
                     onCheckboxToggle={() =>
                         onToggleComplete(task.id, !task.is_completed)
                     }
-                    onClick={() => alert("Open task dialog here")}
+                    onExpand={(rect) => onExpand?.(task, rect)}
                 />
             ))}
         </div>
