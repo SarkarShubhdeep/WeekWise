@@ -1,20 +1,185 @@
 "use client";
 import Button from "@/components/Button";
 import TextField from "@/components/TextField";
+import ViewToggle from "@/components/ViewToggle";
+import { supabase } from "@/lib/supabaseClient";
+import AllTaskView from "@/sections/AllTaskView";
 import WeekView from "@/sections/WeekView";
-import React, { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import React, { useEffect, useRef, useState } from "react";
 import * as Icon from "react-feather";
+import { fetchAllTasks } from "@/lib/fetchTasks";
+import SearchView from "@/sections/SearchView";
+import ExpandedTaskCard from "@/components/ExpandedTaskCard";
+
+interface Task {
+    id: string;
+    title: string;
+    description?: string;
+    date?: string;
+    time?: string;
+    is_completed: boolean;
+}
 
 export default function HomePage() {
+    const router = useRouter();
+
+    // View toggle: week | all
+    const [currentView, setCurrentView] = useState<"week" | "all">("week");
+
+    // Week offset for week switcher
     const [weekOffset, setWeekOffset] = useState(0);
+    const [direction, setDirection] = useState<"forward" | "backward">(
+        "forward"
+    );
+    const prevOffset = useRef(0);
+
+    // ? HANDLING WEEK CHANGE
+    const handleWeekChange = (newOffset: number) => {
+        setDirection(newOffset > prevOffset.current ? "forward" : "backward");
+        prevOffset.current = newOffset;
+        setWeekOffset(newOffset);
+    };
+
+    // Auth & session check
+    const [loading, setLoading] = useState(true);
+    useEffect(() => {
+        const checkSession = async () => {
+            const { data } = await supabase.auth.getSession();
+            if (!data.session) {
+                router.replace("/auth");
+            } else {
+                setLoading(false);
+            }
+        };
+        checkSession();
+    }, [router]);
+
+    // Task data
+    const [allTasks, setAllTasks] = useState<Task[]>([]);
+
+    useEffect(() => {
+        const loadTasks = async () => {
+            const data = await fetchAllTasks();
+            setAllTasks(data);
+        };
+        loadTasks();
+    }, []);
+
+    // ? Filtering/searching/sorting
+    const [sortBy, setSortBy] = useState<
+        "date-asc" | "date-desc" | "title-asc"
+    >("date-asc");
+    const [showCompleted, setShowCompleted] = useState(true);
+    const [showDescriptions, setShowDescriptions] = useState(true);
+
+    const [isSearchActive, setIsSearchActive] = useState(false);
+    const [active, setActive] = useState(false);
+
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (isExpanded && searchInputRef.current) {
+            searchInputRef.current.focus();
+        }
+    }, [isExpanded]);
+
+    const handleBlurIfEmpty = () => {
+        if (searchQuery.trim() === "") {
+            setIsExpanded(false);
+        }
+    };
+
+    const clearAndCollapse = () => {
+        setSearchQuery("");
+        setIsExpanded(false);
+    };
+
+    const toggleExpansion = () => {
+        if (!isExpanded) setIsExpanded(true);
+        else if (searchQuery.trim() === "") setIsExpanded(false);
+    };
+
+    const filteredTasks = allTasks
+        .filter((task) => {
+            const matchesSearch = task.title
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase());
+            const matchesCompleted = showCompleted || !task.is_completed;
+            return matchesSearch && matchesCompleted;
+        })
+        .sort((a, b) => {
+            switch (sortBy) {
+                case "title-asc":
+                    return a.title.localeCompare(b.title);
+                case "date-desc":
+                    return (b.date || "").localeCompare(a.date || "");
+                case "date-asc":
+                default:
+                    return (a.date || "").localeCompare(b.date || "");
+            }
+        });
+
+    useEffect(() => {
+        const handleKeyShortcut = (e: KeyboardEvent) => {
+            const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+            if (
+                (isMac && e.metaKey && e.key === "k") ||
+                (!isMac && e.ctrlKey && e.key === "k")
+            ) {
+                e.preventDefault(); // prevent browser default
+                setIsExpanded(true);
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyShortcut);
+        return () => window.removeEventListener("keydown", handleKeyShortcut);
+    }, []);
+
+    // ? Expanded task card
+    const [expandedTask, setExpandedTask] = useState<Task | null>(null);
+    const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
+
+    const handleExpandTask = (task: Task, rect: DOMRect) => {
+        setExpandedTask(task);
+        setAnchorRect(rect);
+    };
+
+    // ? View options
+    const [showTime, setShowTime] = useState(true);
+    const [showDate, setShowDate] = useState(true);
+    const [showDescription, setShowDescription] = useState(true);
 
     const today = new Date();
-    const todayLabel = today.toLocaleString("default", {
+    const todayLabel = today.toLocaleDateString("default", {
         weekday: "long",
         month: "short",
         day: "numeric",
     });
 
+    // ? HANDLEONCOMPLETE FOR TASKCARD IN ALLTASKVIEW
+    const handleToggleComplete = async (id: string, newStatus: boolean) => {
+        const { error } = await supabase
+            .from("tasks")
+            .update({ is_completed: newStatus })
+            .eq("id", id);
+
+        if (error) {
+            console.error("Failed to update task", error);
+            return;
+        }
+
+        setAllTasks((prev) =>
+            prev.map((task) =>
+                task.id === id ? { ...task, is_completed: newStatus } : task
+            )
+        );
+    };
+
+    // Week label
     const getWeekLabel = () => {
         const today = new Date();
         const startOfWeek = new Date(today);
@@ -30,102 +195,246 @@ export default function HomePage() {
         return `${format(startOfWeek)} - ${format(endOfWeek)}`;
     };
 
+    if (loading) return <div className="p-4">Loading...</div>;
     return (
-        <div className="flex flex-col m-auto w-11/12 lg:w-9/12 md:w-10/12 sm:w-11/12 h-full mt-20 ">
-            <div className="relative w-full">
-                <div className="absolute bottom-1 w-full">
-                    <span className="bg-red-200 lg:hidden md:hidden sm:hidden xl:block">
-                        xl or greater
-                    </span>
-                    <span className="bg-red-200 lg:block md:hidden sm:hidden xl:hidden">
-                        lg
-                    </span>
-                    <span className="bg-red-200 lg:hidden md:block sm:hidden xl:hidden">
-                        md
-                    </span>
-                    <span className="bg-red-200 lg:hidden md:hidden sm:block xl:hidden">
-                        sm
-                    </span>
-                </div>
-            </div>
-
-            {/* //? --------TOP NAV--------- */}
-            <nav className="flex items-center w-full justify-between ">
-                {/* //? Today's day 
+        <main className="animate-fade-in min-h-screen p-6">
+            <div className="flex flex-col m-auto w-11/12 lg:w-9/12 md:w-10/12 sm:w-11/12 h-full mt-20 ">
+                {/* //? --------TOP NAV--------- */}
+                <nav className="flex items-center w-full justify-between ">
+                    {/* //? Today's day 
                 // todo: on click will switch view to current week 
                 */}
-                <div
-                    className="flex flex-col gap-2 w-fit cursor-pointer"
-                    onClick={() => setWeekOffset(0)}
-                    title="Go to current week"
-                >
-                    <div className="flex items-center text-2xl font-semibold gap-2">
-                        {todayLabel}
-                        <div className="h-5 w-5 bg-amber-600 rounded-full"></div>
+                    <div
+                        className="flex flex-col gap-2 w-fit cursor-pointer "
+                        onClick={() => setWeekOffset(0)}
+                        title="Go to current week"
+                    >
+                        <div className="flex items-center text-4xl font-semibold gap-2">
+                            {todayLabel}
+                            <div className="h-5 w-5 bg-amber-600 rounded-full"></div>
+                        </div>
                     </div>
-                </div>
 
-                <div className="text-xl font-semibold flex justify-center items-center h-14 w-14 rounded-full border-1 hover:ring-3 ring-primary-400 ring-offset-3 hover:scale-90 transition-all duration-100 cursor-pointer">
-                    SS
-                </div>
-            </nav>
+                    <div
+                        className="text-xl font-semibold flex justify-center items-center h-14 w-14 rounded-full border-1 hover:ring-3 ring-gray-700 ring-offset-3 hover:scale-90 transition-all duration-100 cursor-pointer"
+                        onClick={() => router.push("/userpreferences")}
+                    >
+                        SS
+                    </div>
+                </nav>
 
-            {/* //? --------ADD NEW TASK BAR & TASK OPTIONS--------- */}
-            <div className="flex items-center justify-between w-full h-10 mt-5">
-                <div className="flex gap-2">
-                    {/* // todo: will open up a small dialog box to add task  */}
-                    <button className="flex text-sm items-center ps-2 py-2 pe-3 gap-1 bg-primary-500 hover:bg-primary-700 text-white rounded-full transition-colors duration-100">
-                        <Icon.Plus height={20} />
-                        Add task
-                    </button>
+                {/* //? --------ADD NEW TASK BAR & TASK OPTIONS--------- */}
+                <div className="flex items-center justify-between w-full h-10 mt-5">
+                    <div className="flex gap-2">
+                        {/* // todo: will open up a small dialog box to add task  */}
+                        <button className="flex text-sm items-center ps-2 py-2 pe-3 gap-1 bg-primary-500 hover:bg-primary-700 text-white rounded-full transition-colors duration-100">
+                            <Icon.Plus height={20} />
+                            Add task
+                        </button>
 
-                    {/* // todo: expands open an input to search */}
-                    <div className="">
-                        <button className="border-1 border-gray-700 rounded-full p-2 hover:bg-gray-700 hover:text-white transition-colors duration-100">
-                            <Icon.Search height={20} />
+                        {/* // todo: expands open an input to search */}
+
+                        <motion.div
+                            className="flex items-center justify-center border-1 border-gray-700 rounded-full bg-white overflow-hidden"
+                            animate={{ width: isExpanded ? 280 : 38 }}
+                            transition={{
+                                type: "spring",
+                                stiffness: 300,
+                                damping: 20,
+                            }}
+                        >
+                            <input
+                                ref={searchInputRef}
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onBlur={handleBlurIfEmpty}
+                                placeholder="Search tasks..."
+                                className={`flex-1 text-sm outline-none h-full ${
+                                    isExpanded ? "ps-3" : "p-0"
+                                }`}
+                                style={{
+                                    opacity: isExpanded ? 1 : 0,
+                                    width: isExpanded ? "100%" : 0,
+                                    transition: "opacity 0.2s ease",
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Escape") {
+                                        setIsExpanded(false);
+                                        setSearchQuery("");
+                                    }
+                                }}
+                            />
+                            {isExpanded && searchQuery ? (
+                                <button
+                                    onClick={clearAndCollapse}
+                                    className="p-2 rounded-full text-gray-700 hover:bg-gray-200"
+                                    type="button"
+                                >
+                                    <Icon.X size={18} />
+                                </button>
+                            ) : (
+                                <button
+                                    className="p-2 rounded-full text-gray-700 hover:bg-gray-200"
+                                    onClick={toggleExpansion}
+                                    type="button"
+                                >
+                                    <Icon.Search size={18} />
+                                </button>
+                            )}
+                        </motion.div>
+                        {isExpanded ? (
+                            ""
+                        ) : (
+                            <div className="text-xs italic  flex items-center opacity-50">
+                                <span className="font-mono pe-2 font-semibold">
+                                    cmd + k
+                                </span>{" "}
+                                to search your tasks
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex gap-2">
+                        {/* // todo: show completed task bg toggle  */}
+                        <button className="flex items-center px-3 py-2 bg-gray-200 rounded-full text-sm gap-1 transition-all duration-100">
+                            Show completed
+                        </button>
+
+                        <button className="flex items-center px-3 py-2 bg-gray-200 rounded-full text-sm gap-1 transition-all duration-100">
+                            Show descriptions
+                        </button>
+
+                        {/* // todo: create sorting otpions dropdown menu */}
+                        <button className="flex items-center pe-3 py-2 ps-2 bg-gray-200 rounded-full text-sm gap-1 transition-all duration-100">
+                            <Icon.ChevronDown height={20} />
+                            Sort: Acs
                         </button>
                     </div>
                 </div>
-                <div className="flex gap-2">
-                    {/* // todo: show completed task bg toggle  */}
-                    <button className="flex items-center px-3 py-2 bg-gray-200 rounded-full text-sm gap-1 transition-all duration-100">
-                        Show completed
-                    </button>
 
-                    {/* // todo: create sorting otpions dropdown menu */}
-                    <button className="flex items-center pe-3 py-2 ps-2 bg-gray-200 rounded-full text-sm gap-1 transition-all duration-100">
-                        <Icon.ChevronDown height={20} />
-                        Sort: Acs
-                    </button>
-
+                <div className="flex border-t-1 mt-4 gap-2 border-gray-200 pt-4">
+                    <ViewToggle
+                        current={currentView}
+                        onToggle={setCurrentView}
+                    />
                     {/* // todo: week switcher */}
-                    <div className="flex items-center gap-0 bg-gray-200 rounded-full text-sm hover:gap-2 transition-all duration-100">
-                        <button
-                            className="hover:bg-gray-700 hover:text-white p-2 rounded-full"
-                            onClick={() => setWeekOffset((prev) => prev - 1)}
-                        >
-                            <Icon.ChevronLeft height={20} />
-                        </button>
 
-                        {getWeekLabel()}
+                    {currentView === "week" && (
+                        <div className="flex w-fit items-center gap-0 bg-gray-200 rounded-full text-xs hover:gap-2 transition-all duration-100 h-8">
+                            <button
+                                className="hover:bg-gray-700 hover:text-white p-2 rounded-full"
+                                onClick={() => handleWeekChange(weekOffset - 1)}
+                            >
+                                <Icon.ChevronLeft height={18} />
+                            </button>
 
-                        <button
-                            className="hover:bg-gray-700 hover:text-white p-2 rounded-full"
-                            onClick={() => setWeekOffset((prev) => prev + 1)}
-                        >
-                            <Icon.ChevronRight height={20} />
-                        </button>
-                    </div>
+                            {getWeekLabel()}
+
+                            <button
+                                className="hover:bg-gray-700 hover:text-white p-2 rounded-full"
+                                onClick={() => handleWeekChange(weekOffset + 1)}
+                            >
+                                <Icon.ChevronRight height={18} />
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* //? --------WEEK VIEW | ALL TASKS SECTION | SEARCH VIEW --------- */}
+                <div className="max-h-[75vh] overflow-y-auto">
+                    {/* <div className="text-2xl font-semibold">View Title</div> */}
+                    {searchQuery.trim() ? (
+                        <SearchView
+                            query={searchQuery}
+                            tasks={allTasks}
+                            showCompleted={showCompleted}
+                            showDescriptions={showDescriptions}
+                            sortBy={sortBy}
+                            onToggleComplete={handleToggleComplete}
+                            onExpand={handleExpandTask} // ✅ THIS
+                        />
+                    ) : (
+                        // currentView === "week" ? (
+                        //     <WeekView
+                        //         weekOffset={weekOffset}
+                        //         direction={direction}
+                        //         tasks={allTasks}
+                        //     />
+                        // ) :
+                        <AllTaskView
+                            tasks={allTasks}
+                            showCompleted={showCompleted}
+                            showDescriptions={showDescriptions}
+                            sortBy={sortBy}
+                            onToggleComplete={handleToggleComplete}
+                            onExpand={handleExpandTask}
+                        />
+                    )}
                 </div>
             </div>
+            {expandedTask && anchorRect && (
+                <ExpandedTaskCard
+                    isOpen
+                    anchorRect={anchorRect}
+                    onClose={() => setExpandedTask(null)}
+                    initialData={{
+                        title: expandedTask.title,
+                        date: expandedTask.date,
+                        time: expandedTask.time,
+                        description: expandedTask.description ?? "",
+                        is_completed: expandedTask.is_completed,
+                    }}
+                    onSave={async (updates) => {
+                        console.log("Saving updates:", updates);
+                        const id = expandedTask.id;
 
-            <div className="border-t-1 mt-4 border-gray-200"></div>
+                        // Convert empty strings to null for valid DB input
+                        const cleanUpdates = {
+                            ...updates,
+                            date:
+                                updates.date?.trim() === ""
+                                    ? null
+                                    : updates.date,
+                            time:
+                                updates.time?.trim() === ""
+                                    ? null
+                                    : updates.time,
+                        };
 
-            {/* //? --------WEEK / DAYS (min 3 days, max 7 days) TASKS SECTION--------- */}
-            <div className="w-full mt-10">
-                {/* 7-day (view switchable to 7, 6, 5, 4, 3 days)  */}
-                <WeekView weekOffset={weekOffset} />
-            </div>
-        </div>
+                        const user = await supabase.auth.getUser();
+                        const user_id = user.data.user?.id;
+
+                        const { error } = await supabase
+                            .from("tasks")
+                            .update(cleanUpdates)
+                            .eq("id", id)
+                            .eq("user_id", user_id);
+
+                        console.log("Trying to update task:", {
+                            id,
+                            user_id,
+                            cleanUpdates,
+                        });
+
+                        if (error) {
+                            console.error("Update failed:", error);
+                        } else {
+                            setAllTasks((prev) =>
+                                prev.map((task) =>
+                                    task.id === id
+                                        ? {
+                                              ...task,
+                                              ...(cleanUpdates as Partial<Task>),
+                                          }
+                                        : task
+                                )
+                            );
+                        }
+
+                        setExpandedTask(null);
+                    }}
+                />
+            )}
+        </main>
     );
 }
