@@ -341,7 +341,7 @@ export default function HomePage() {
                 </div>
 
                 {/* //? --------WEEK VIEW | ALL TASKS SECTION | SEARCH VIEW --------- */}
-                <div className="max-h-[75vh] overflow-y-auto">
+                <div className="max-h-[75vh] overflow-y-auto overflow-visible">
                     {/* <div className="text-2xl font-semibold">View Title</div> */}
                     {searchQuery.trim() ? (
                         <SearchView
@@ -351,16 +351,17 @@ export default function HomePage() {
                             showDescriptions={showDescriptions}
                             sortBy={sortBy}
                             onToggleComplete={handleToggleComplete}
-                            onExpand={handleExpandTask} // ✅ THIS
+                            onExpand={handleExpandTask}
+                        />
+                    ) : currentView === "week" ? (
+                        <WeekView
+                            weekOffset={weekOffset}
+                            direction={direction}
+                            tasks={allTasks}
+                            onToggleComplete={handleToggleComplete}
+                            onExpand={handleExpandTask}
                         />
                     ) : (
-                        // currentView === "week" ? (
-                        //     <WeekView
-                        //         weekOffset={weekOffset}
-                        //         direction={direction}
-                        //         tasks={allTasks}
-                        //     />
-                        // ) :
                         <AllTaskView
                             tasks={allTasks}
                             showCompleted={showCompleted}
@@ -430,7 +431,6 @@ export default function HomePage() {
                                 )
                             );
                         }
-
                         setExpandedTask(null);
                     }}
                 />

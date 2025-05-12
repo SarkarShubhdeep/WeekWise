@@ -45,33 +45,29 @@ const TaskCard: React.FC<TaskCardProps> = ({
             onClick={handleClick}
             onDoubleClick={onDoubleClick}
         >
-            {showCheckbox && (
-                <input
-                    type="checkbox"
-                    checked={isCompleted}
-                    onChange={onCheckboxToggle}
-                    onClick={(e) => e.stopPropagation()}
-                    className="mt-1 h-4 w-4 text-primary-500"
-                />
-            )}
+            <input
+                type="checkbox"
+                checked={isCompleted}
+                onChange={onCheckboxToggle}
+                onClick={(e) => e.stopPropagation()}
+                className="mt-1 h-4 w-4 text-primary-500"
+            />
 
             <div
-                className={`flex-1 ${
+                className={`flex-1 space-y-2 ${
                     isCompleted
                         ? "opacity-60 line-through text-gray-500"
                         : "opacity-100"
                 }`}
             >
                 <div className="font-medium">{title}</div>
-
-                {(date || time) && (
-                    <div className="text-xs text-blue-600 mt-1">
-                        {[time, date].filter(Boolean).join(" - ")}
-                    </div>
-                )}
+                <div className="space-y-1 text-blue-600">
+                    <div className="text-xs">{time}</div>
+                    <div className="text-xs">{date}</div>
+                </div>
 
                 {description && (
-                    <div className="text-xs text-gray-400 mt-1 line-clamp-2">
+                    <div className="text-xs text-gray-700 mt-1">
                         {description}
                     </div>
                 )}
