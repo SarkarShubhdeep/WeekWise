@@ -16,7 +16,7 @@ interface SearchViewProps {
     query: string;
     showDescriptions: boolean;
     showCompleted: boolean;
-    sortBy: "date-asc" | "date-desc" | "title-asc";
+    sortBy: "none" | "date-asc" | "date-desc" | "title-asc";
     onToggleComplete: (id: string, newStatus: boolean) => void;
     onExpand?: (task: Task, rect: DOMRect) => void;
 }

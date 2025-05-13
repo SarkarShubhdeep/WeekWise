@@ -1,6 +1,7 @@
+// home/page.tsx
+
 "use client";
-import Button from "@/components/Button";
-import TextField from "@/components/TextField";
+
 import ViewToggle from "@/components/ViewToggle";
 import { supabase } from "@/lib/supabaseClient";
 import AllTaskView from "@/sections/AllTaskView";
@@ -12,6 +13,8 @@ import * as Icon from "react-feather";
 import { fetchAllTasks } from "@/lib/fetchTasks";
 import SearchView from "@/sections/SearchView";
 import ExpandedTaskCard from "@/components/ExpandedTaskCard";
+
+import { getTodayISOInCurrentWeek } from "@/sections/WeekView";
 
 interface Task {
     id: string;
@@ -25,10 +28,62 @@ interface Task {
 export default function HomePage() {
     const router = useRouter();
 
-    // View toggle: week | all
+    // ? Adding new task
+    const [isAddingTask, setIsAddingTask] = useState(false);
+    const [newTaskText, setNewTaskText] = useState("");
+
+    const getTodayLocalISO = () => new Date().toLocaleDateString("sv-SE");
+
+    // ? ADDING NEW TASK LOGIC
+    const handleAddTask = async ({
+        title,
+        date,
+        time,
+    }: {
+        title: string;
+        date?: string;
+        time?: string;
+    }) => {
+        const user = await supabase.auth.getUser();
+        const user_id = user.data.user?.id;
+        if (!user_id || !title.trim()) return;
+
+        const newTask: any = {
+            title: title.trim(),
+            user_id,
+            is_completed: false,
+        };
+
+        // Use parsed date/time if available
+        if (date) newTask.date = date;
+        if (time) newTask.time = time;
+
+        // If in week view but no parsed date, use today within current week
+
+        if (currentView === "week" && !date) {
+            newTask.date = new Date().toLocaleDateString("sv-SE");
+        }
+
+        const { data, error } = await supabase
+            .from("tasks")
+            .insert([newTask])
+            .select()
+            .single();
+
+        if (error) {
+            console.error("Insert failed", error);
+            return;
+        }
+
+        setAllTasks((prev) => [data, ...prev]);
+        setIsAddingTask(false);
+        setNewTaskText("");
+    };
+
+    // ? View toggle: week | all
     const [currentView, setCurrentView] = useState<"week" | "all">("week");
 
-    // Week offset for week switcher
+    // ? Week offset for week switcher
     const [weekOffset, setWeekOffset] = useState(0);
     const [direction, setDirection] = useState<"forward" | "backward">(
         "forward"
@@ -69,7 +124,7 @@ export default function HomePage() {
 
     // ? Filtering/searching/sorting
     const [sortBy, setSortBy] = useState<
-        "date-asc" | "date-desc" | "title-asc"
+        "none" | "date-asc" | "date-desc" | "title-asc"
     >("date-asc");
     const [showCompleted, setShowCompleted] = useState(true);
     const [showDescriptions, setShowDescriptions] = useState(true);
@@ -103,6 +158,14 @@ export default function HomePage() {
         else if (searchQuery.trim() === "") setIsExpanded(false);
     };
 
+    // Ensure WeekView only receives allowed sortBy values
+    const weekSort: "none" | "time-asc" | "time-desc" | "title-asc" =
+        sortBy === "title-asc" || sortBy === "none"
+            ? sortBy
+            : sortBy === "date-desc"
+            ? "time-desc"
+            : "time-asc"; // fallback for "date-asc"
+
     const filteredTasks = allTasks
         .filter((task) => {
             const matchesSearch = task.title
@@ -118,11 +181,14 @@ export default function HomePage() {
                 case "date-desc":
                     return (b.date || "").localeCompare(a.date || "");
                 case "date-asc":
-                default:
                     return (a.date || "").localeCompare(b.date || "");
+                case "none":
+                default:
+                    return 0;
             }
         });
 
+    // ? SHORTCUT: CMD + K - SEARCH BAR
     useEffect(() => {
         const handleKeyShortcut = (e: KeyboardEvent) => {
             const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
@@ -137,6 +203,23 @@ export default function HomePage() {
 
         window.addEventListener("keydown", handleKeyShortcut);
         return () => window.removeEventListener("keydown", handleKeyShortcut);
+    }, []);
+    // ? SHORTCUT: N - ADD NEW TASK
+    useEffect(() => {
+        const handleAddTaskShortcut = (e: KeyboardEvent) => {
+            if (
+                document.activeElement?.tagName !== "INPUT" && // don't trigger inside input
+                document.activeElement?.tagName !== "TEXTAREA" &&
+                e.key.toLowerCase() === "n"
+            ) {
+                e.preventDefault();
+                setIsAddingTask(true);
+            }
+        };
+
+        window.addEventListener("keydown", handleAddTaskShortcut);
+        return () =>
+            window.removeEventListener("keydown", handleAddTaskShortcut);
     }, []);
 
     // ? Expanded task card
@@ -227,7 +310,10 @@ export default function HomePage() {
                 <div className="flex items-center justify-between w-full h-10 mt-5">
                     <div className="flex gap-2">
                         {/* // todo: will open up a small dialog box to add task  */}
-                        <button className="flex text-sm items-center ps-2 py-2 pe-3 gap-1 bg-primary-500 hover:bg-primary-700 text-white rounded-full transition-colors duration-100">
+                        <button
+                            className="flex text-sm items-center ps-2 py-2 pe-3 gap-1 bg-primary-500 hover:bg-primary-700 text-white rounded-full transition-colors duration-100"
+                            onClick={() => setIsAddingTask(true)}
+                        >
                             <Icon.Plus height={20} />
                             Add task
                         </button>
@@ -295,53 +381,95 @@ export default function HomePage() {
                         )}
                     </div>
                     <div className="flex gap-2">
-                        {/* // todo: show completed task bg toggle  */}
-                        <button className="flex items-center px-3 py-2 bg-gray-200 rounded-full text-sm gap-1 transition-all duration-100">
-                            Show completed
+                        {/* // todo: week switcher */}
+
+                        {currentView === "week" && (
+                            <div className="flex w-fit items-center gap-0 bg-gray-200 rounded-full text-sm hover:gap-2 transition-all duration-100 ">
+                                <button
+                                    className="hover:bg-gray-700 hover:text-white p-2 rounded-full"
+                                    onClick={() =>
+                                        handleWeekChange(weekOffset - 1)
+                                    }
+                                >
+                                    <Icon.ChevronLeft height={18} />
+                                </button>
+
+                                {getWeekLabel()}
+
+                                <button
+                                    className="hover:bg-gray-700 hover:text-white p-2 rounded-full"
+                                    onClick={() =>
+                                        handleWeekChange(weekOffset + 1)
+                                    }
+                                >
+                                    <Icon.ChevronRight height={18} />
+                                </button>
+                            </div>
+                        )}
+                        <button
+                            className={`flex items-center py-2 ps-3  rounded-full text-sm gap-1 transition-all duration-100 ${
+                                sortBy === "none"
+                                    ? "bg-gray-200 pe-3"
+                                    : "bg-gray-700 text-white pe-2"
+                            }`}
+                            onClick={() => {
+                                setSortBy((prev) => {
+                                    if (prev === "none") return "date-asc";
+                                    if (prev === "date-asc") return "date-desc";
+                                    if (prev === "date-desc")
+                                        return "title-asc";
+                                    return "none";
+                                });
+                            }}
+                        >
+                            {sortBy === "none" && (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs opacity-70">
+                                        Sort
+                                    </span>
+                                    None
+                                </div>
+                            )}
+                            {sortBy === "date-asc" && (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs opacity-70">
+                                        Sort
+                                    </span>
+                                    Date
+                                    <Icon.ArrowUp height={16} />
+                                </div>
+                            )}
+                            {sortBy === "date-desc" && (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs opacity-70">
+                                        Sort
+                                    </span>
+                                    Date
+                                    <Icon.ArrowDown height={16} />
+                                </div>
+                            )}
+                            {sortBy === "title-asc" && (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs opacity-70">
+                                        Sort
+                                    </span>
+                                    Title
+                                    <Icon.ArrowUp height={16} />
+                                </div>
+                            )}
                         </button>
 
-                        <button className="flex items-center px-3 py-2 bg-gray-200 rounded-full text-sm gap-1 transition-all duration-100">
-                            Show descriptions
-                        </button>
-
-                        {/* // todo: create sorting otpions dropdown menu */}
-                        <button className="flex items-center pe-3 py-2 ps-2 bg-gray-200 rounded-full text-sm gap-1 transition-all duration-100">
-                            <Icon.ChevronDown height={20} />
-                            Sort: Acs
-                        </button>
+                        <ViewToggle
+                            current={currentView}
+                            onToggle={setCurrentView}
+                        />
                     </div>
                 </div>
 
-                <div className="flex border-t-1 mt-4 gap-2 border-gray-200 pt-4">
-                    <ViewToggle
-                        current={currentView}
-                        onToggle={setCurrentView}
-                    />
-                    {/* // todo: week switcher */}
-
-                    {currentView === "week" && (
-                        <div className="flex w-fit items-center gap-0 bg-gray-200 rounded-full text-xs hover:gap-2 transition-all duration-100 h-8">
-                            <button
-                                className="hover:bg-gray-700 hover:text-white p-2 rounded-full"
-                                onClick={() => handleWeekChange(weekOffset - 1)}
-                            >
-                                <Icon.ChevronLeft height={18} />
-                            </button>
-
-                            {getWeekLabel()}
-
-                            <button
-                                className="hover:bg-gray-700 hover:text-white p-2 rounded-full"
-                                onClick={() => handleWeekChange(weekOffset + 1)}
-                            >
-                                <Icon.ChevronRight height={18} />
-                            </button>
-                        </div>
-                    )}
-                </div>
+                <div className="flex border-t-1 mt-4 gap-2 border-gray-200 pt-4"></div>
 
                 {/* //? --------WEEK VIEW | ALL TASKS SECTION | SEARCH VIEW --------- */}
-                <div className="max-h-[75vh] overflow-y-auto overflow-visible">
+                <div className="max-h-[75vh] overflow-y-auto overflow-visible mt-4">
                     {/* <div className="text-2xl font-semibold">View Title</div> */}
                     {searchQuery.trim() ? (
                         <SearchView
@@ -360,6 +488,12 @@ export default function HomePage() {
                             tasks={allTasks}
                             onToggleComplete={handleToggleComplete}
                             onExpand={handleExpandTask}
+                            isAdding={isAddingTask}
+                            newTaskText={newTaskText}
+                            setNewTaskText={setNewTaskText}
+                            onAddTask={handleAddTask}
+                            handleCancel={() => setIsAddingTask(false)}
+                            sortBy={weekSort}
                         />
                     ) : (
                         <AllTaskView
@@ -369,6 +503,11 @@ export default function HomePage() {
                             sortBy={sortBy}
                             onToggleComplete={handleToggleComplete}
                             onExpand={handleExpandTask}
+                            isAdding={isAddingTask}
+                            newTaskText={newTaskText}
+                            setNewTaskText={setNewTaskText}
+                            onAddTask={handleAddTask}
+                            handleCancel={() => setIsAddingTask(false)}
                         />
                     )}
                 </div>

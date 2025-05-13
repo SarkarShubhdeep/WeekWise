@@ -10,7 +10,7 @@ interface ViewToggleProps {
 
 export default function ViewToggle({ current, onToggle }: ViewToggleProps) {
     return (
-        <div className="relative w-40 py-2 h-8 flex rounded-full bg-gray-200 text-xs font-medium overflow-hidden">
+        <div className="relative w-50 py-2 flex rounded-full bg-gray-200 text-sm font-medium overflow-hidden">
             {["all", "week"].map((view) => (
                 <button
                     key={view}

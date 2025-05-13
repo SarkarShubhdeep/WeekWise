@@ -1,6 +1,10 @@
+// AllTaskView.tsx
+
 "use client";
 
+import NewTaskCardInput from "@/components/NewTaskCardInput";
 import TaskCard from "@/components/TaskCard";
+import { useEffect, useRef, useState } from "react";
 
 interface Task {
     id: string;
@@ -15,9 +19,14 @@ interface AllTaskViewProps {
     tasks: Task[];
     showDescriptions: boolean;
     showCompleted: boolean;
-    sortBy: "date-asc" | "date-desc" | "title-asc";
+    sortBy: "none" | "date-asc" | "date-desc" | "title-asc";
     onToggleComplete: (id: string, newStatus: boolean) => void;
     onExpand?: (task: Task, rect: DOMRect) => void;
+    isAdding: boolean;
+    newTaskText: string;
+    setNewTaskText: (text: string) => void;
+    onAddTask: (task: { title: string; date?: string; time?: string }) => void;
+    handleCancel: () => void;
 }
 
 export default function AllTaskView({
@@ -27,6 +36,11 @@ export default function AllTaskView({
     sortBy,
     onToggleComplete,
     onExpand,
+    isAdding,
+    newTaskText,
+    setNewTaskText,
+    onAddTask,
+    handleCancel,
 }: AllTaskViewProps) {
     const sortedFilteredTasks = tasks
         .filter((task) => showCompleted || !task.is_completed)
@@ -47,8 +61,21 @@ export default function AllTaskView({
         );
     }
 
+    const newTaskInputRef = useRef<HTMLInputElement>(null);
+    useEffect(() => {
+        if (isAdding) newTaskInputRef.current?.focus();
+    }, [isAdding]);
+
     return (
         <div className="flex flex-col gap-1 w-full scroll-auto overflow-visible bg-white/20 p-2">
+            {isAdding && (
+                <NewTaskCardInput
+                    onCancel={handleCancel}
+                    onSave={(parsedTask) => {
+                        onAddTask(parsedTask); // Make sure this prop is wired
+                    }}
+                />
+            )}
             {sortedFilteredTasks.map((task) => (
                 <TaskCard
                     className="max-w-[400px]"

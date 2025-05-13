@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
+    "chrono-node": "^2.8.0",
     "framer-motion": "^12.10.5",
     "gsap": "^3.13.0",
     "next": "15.3.1",

@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import TaskCard from "@/components/TaskCard";
 import { motion, AnimatePresence } from "framer-motion";
+import NewTaskCardInput from "@/components/NewTaskCardInput";
 
 interface Task {
     id: string;
@@ -19,9 +20,33 @@ interface WeekViewProps {
     tasks: Task[];
     onToggleComplete: (id: string, newStatus: boolean) => void;
     onExpand: (task: Task, rect: DOMRect) => void;
+    isAdding: boolean;
+    newTaskText: string;
+    setNewTaskText: React.Dispatch<React.SetStateAction<string>>;
+    onAddTask: (data: { title: string; date?: string; time?: string }) => void;
+    handleCancel: () => void;
+    sortBy: "none" | "time-asc" | "time-desc" | "title-asc";
 }
 
 const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+export const getTodayISOInCurrentWeek = (weekOffset: number) => {
+    const today = new Date();
+    const startOfWeek = new Date();
+    startOfWeek.setDate(
+        today.getDate() - ((today.getDay() + 6) % 7) + weekOffset * 7
+    );
+
+    const todayInWeek = new Date(startOfWeek);
+    todayInWeek.setDate(startOfWeek.getDate() + ((today.getDay() + 6) % 7));
+
+    return `${todayInWeek.getFullYear()}-${(todayInWeek.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}-${todayInWeek
+        .getDate()
+        .toString()
+        .padStart(2, "0")}`;
+};
 
 export default function WeekView({
     weekOffset,
@@ -29,7 +54,13 @@ export default function WeekView({
     tasks,
     onToggleComplete,
     onExpand,
+    isAdding,
+    onAddTask,
+    handleCancel,
+    sortBy,
 }: WeekViewProps) {
+    const [addingDate, setAddingDate] = useState<string | null>(null);
+
     const today = new Date();
 
     const startOfWeek = useMemo(() => {
@@ -82,13 +113,40 @@ export default function WeekView({
                     className="grid grid-cols-7 min-w-[900px] min-h-[75vh]"
                 >
                     {weekDays.map((day, idx) => {
-                        const key = day.fullDate.toISOString().split("T")[0];
-                        const tasksForDay = tasksByDate[key] || [];
+                        const key = `${day.fullDate.getFullYear()}-${(
+                            day.fullDate.getMonth() + 1
+                        )
+                            .toString()
+                            .padStart(2, "0")}-${day.fullDate
+                            .getDate()
+                            .toString()
+                            .padStart(2, "0")}`;
+                        const dayTasks = tasksByDate[key] || [];
+
+                        const sortedTasks = [...dayTasks].sort((a, b) => {
+                            if (sortBy === "title-asc") {
+                                return a.title.localeCompare(b.title);
+                            }
+                            if (sortBy === "time-asc") {
+                                return (a.time || "").localeCompare(
+                                    b.time || ""
+                                );
+                            }
+                            if (sortBy === "time-desc") {
+                                return (b.time || "").localeCompare(
+                                    a.time || ""
+                                );
+                            }
+                            return 0;
+                        });
+
+                        const isCurrentDay =
+                            getTodayISOInCurrentWeek(weekOffset) === key;
 
                         return (
                             <div
                                 key={idx}
-                                className="flex flex-col gap-2 p-1 py-3 rounded-t-xl hover:bg-gradient-to-b from-primary-100 to-primary-50/0 transition-all duration-100"
+                                className="flex flex-col gap-2 p-1 py-6 rounded-t-xl hover:bg-gradient-to-b from-primary-100 to-primary-50/0 transition-all duration-100"
                             >
                                 <div
                                     className={`flex w-fit items-start gap-2 rounded-full px-2 py-1 text-sm mb-2 ${
@@ -104,7 +162,13 @@ export default function WeekView({
                                 </div>
 
                                 <div className="flex flex-col gap-1">
-                                    {tasksForDay.map((task) => (
+                                    {isAdding && isCurrentDay && (
+                                        <NewTaskCardInput
+                                            onCancel={handleCancel}
+                                            onSave={onAddTask}
+                                        />
+                                    )}
+                                    {sortedTasks.map((task) => (
                                         <TaskCard
                                             key={task.id}
                                             title={task.title}
@@ -112,13 +176,13 @@ export default function WeekView({
                                             time={task.time}
                                             description={task.description}
                                             isCompleted={task.is_completed}
-                                            showCheckbox={false}
                                             onCheckboxToggle={() =>
                                                 onToggleComplete(
                                                     task.id,
                                                     !task.is_completed
                                                 )
                                             }
+                                            showCheckbox={true}
                                             onExpand={(rect) =>
                                                 onExpand(task, rect)
                                             }
