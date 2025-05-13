@@ -6,6 +6,7 @@ import Button from "@/components/Button";
 import TextField from "@/components/TextField";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function AuthPage() {
     // ? next router
@@ -43,6 +44,7 @@ export default function AuthPage() {
 
         if (error) {
             alert(error.message);
+            toast.error(error.message);
         } else {
             setStatusMsg(
                 "Check your inbox to confirm your email before logging in."
@@ -62,7 +64,8 @@ export default function AuthPage() {
         });
 
         if (error) {
-            alert(error.message);
+            // alert(error.message);
+            toast.error(error.message);
         } else {
             setStatusMsg("Successfully signed in!");
             router.replace("/home");

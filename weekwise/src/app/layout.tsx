@@ -5,6 +5,8 @@ import "./globals.css";
 import PageTransition from "@/components/PageTransition";
 import UserPreferences from "./userpreferences/page";
 import { UserProvider } from "@/contexts/UserContext";
+// Add this at the bottom of your JSX (e.g., in <UserPreferences /> or layout)
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -32,6 +34,7 @@ export default function RootLayout({
                 className={`${geistSans.variable} ${geistMono.variable} antialiased`}
             >
                 <UserProvider>{children}</UserProvider>
+                <Toaster position="bottom-right" />;
             </body>
         </html>
     );
