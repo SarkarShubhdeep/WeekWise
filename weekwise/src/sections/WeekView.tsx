@@ -5,6 +5,17 @@ import TaskCard from "@/components/TaskCard";
 import { motion, AnimatePresence } from "framer-motion";
 import NewTaskCardInput from "@/components/NewTaskCardInput";
 
+import {
+    DndContext,
+    closestCenter,
+    useSensor,
+    useSensors,
+    PointerSensor,
+    DragEndEvent,
+    useDraggable,
+    useDroppable,
+} from "@dnd-kit/core";
+
 interface Task {
     id: string;
     title: string;
@@ -26,6 +37,7 @@ interface WeekViewProps {
     onAddTask: (data: { title: string; date?: string; time?: string }) => void;
     handleCancel: () => void;
     sortBy: "none" | "time-asc" | "time-desc" | "title-asc";
+    onTaskDrop: (taskId: string, newDate: string) => void;
 }
 
 const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -40,13 +52,41 @@ export const getTodayISOInCurrentWeek = (weekOffset: number) => {
     const todayInWeek = new Date(startOfWeek);
     todayInWeek.setDate(startOfWeek.getDate() + ((today.getDay() + 6) % 7));
 
-    return `${todayInWeek.getFullYear()}-${(todayInWeek.getMonth() + 1)
-        .toString()
-        .padStart(2, "0")}-${todayInWeek
-        .getDate()
-        .toString()
-        .padStart(2, "0")}`;
+    return todayInWeek.toISOString().split("T")[0];
 };
+
+function DraggableTask({
+    id,
+    children,
+}: {
+    id: string;
+    children: React.ReactNode;
+}) {
+    const { attributes, listeners, setNodeRef, transform } = useDraggable({
+        id,
+    });
+
+    const style = transform
+        ? {
+              transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+              zIndex: 10,
+              position: "relative",
+              opacity: 0.9,
+              cursor: "grabbing",
+          }
+        : { cursor: "grab" };
+
+    return (
+        <div
+            ref={setNodeRef}
+            {...listeners}
+            {...attributes}
+            style={style as React.CSSProperties}
+        >
+            {children}
+        </div>
+    );
+}
 
 export default function WeekView({
     weekOffset,
@@ -58,8 +98,25 @@ export default function WeekView({
     onAddTask,
     handleCancel,
     sortBy,
+    onTaskDrop,
 }: WeekViewProps) {
-    const [addingDate, setAddingDate] = useState<string | null>(null);
+    const sensors = useSensors(useSensor(PointerSensor));
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        console.log("Drag event payload:", event);
+        const { active, over } = event;
+        if (!over) {
+            console.log("❌ Dragged item did not land on any drop zone");
+            return;
+        }
+
+        const taskId = active.id.toString();
+        const newDate = over.id.toString();
+        console.log("✅ Dragging task:", taskId, "to:", newDate);
+        console.log("🔥 Task", taskId, "was dropped over", over?.id);
+
+        onTaskDrop(taskId, newDate);
+    };
 
     const today = new Date();
 
@@ -96,32 +153,36 @@ export default function WeekView({
     const isToday = (d: Date) => d.toDateString() === today.toDateString();
 
     return (
-        <section className="w-full  overflow-visible">
-            <AnimatePresence mode="wait">
-                <motion.div
-                    key={weekOffset}
-                    initial={{
-                        opacity: 0,
-                        x: direction === "forward" ? 100 : -100,
-                    }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{
-                        opacity: 0,
-                        x: direction === "forward" ? -100 : 100,
-                    }}
-                    transition={{ duration: 0.15 }}
-                    className="grid grid-cols-7 min-w-[900px] min-h-[75vh]"
-                >
+        <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+        >
+            <section className="w-full overflow-visible">
+                {/* <AnimatePresence mode="wait">
+                    <motion.div
+                        key={weekOffset}
+                        initial={{
+                            opacity: 0,
+                            x: direction === "forward" ? 100 : -100,
+                        }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{
+                            opacity: 0,
+                            x: direction === "forward" ? -100 : 100,
+                        }}
+                        transition={{ duration: 0.15 }}
+                        className="grid grid-cols-7 min-w-[900px] min-h-[75vh]"
+                    > */}
+                <div className="grid grid-cols-7 min-w-[900px] min-h-[75vh]">
                     {weekDays.map((day, idx) => {
-                        const key = `${day.fullDate.getFullYear()}-${(
-                            day.fullDate.getMonth() + 1
-                        )
-                            .toString()
-                            .padStart(2, "0")}-${day.fullDate
-                            .getDate()
-                            .toString()
-                            .padStart(2, "0")}`;
+                        const key = day.fullDate.toISOString().split("T")[0];
+                        const droppableId = `day-${key}`;
                         const dayTasks = tasksByDate[key] || [];
+                        const { setNodeRef, isOver } = useDroppable({
+                            id: droppableId,
+                        });
+                        console.log("Droppable registered for", droppableId);
 
                         const sortedTasks = [...dayTasks].sort((a, b) => {
                             if (sortBy === "title-asc") {
@@ -145,8 +206,25 @@ export default function WeekView({
 
                         return (
                             <div
+                                ref={setNodeRef}
+                                data-date={key}
+                                id={droppableId}
                                 key={idx}
-                                className="flex flex-col gap-2 p-1 py-6 rounded-t-xl hover:bg-gradient-to-b from-primary-100 to-primary-50/0 transition-all duration-100"
+                                className={`min-h-[150px] rounded-t-xl p-1 py-6 flex flex-col gap-2 transition-all duration-100
+                                ${
+                                    isOver
+                                        ? "border-2 border-blue-500 bg-blue-50"
+                                        : "hover:bg-primary-100"
+                                }
+                            `}
+                                // className={`flex flex-col gap-2 p-1 py-6 rounded-t-xl min-h-[150px]
+                                //         transition-all duration-100 bg-gray-700
+                                //         ${
+                                //             isOver
+                                //                 ? "bg-primary-100 ring-2 ring-primary-400"
+                                //                 : "hover:bg-gradient-to-b from-primary-100 to-primary-50/0"
+                                //         }
+                                //       `}
                             >
                                 <div
                                     className={`flex w-fit items-start gap-2 rounded-full px-2 py-1 text-sm mb-2 ${
@@ -169,31 +247,38 @@ export default function WeekView({
                                         />
                                     )}
                                     {sortedTasks.map((task) => (
-                                        <TaskCard
+                                        <DraggableTask
                                             key={task.id}
-                                            title={task.title}
-                                            date={task.date}
-                                            time={task.time}
-                                            description={task.description}
-                                            isCompleted={task.is_completed}
-                                            onCheckboxToggle={() =>
-                                                onToggleComplete(
-                                                    task.id,
-                                                    !task.is_completed
-                                                )
-                                            }
-                                            showCheckbox={true}
-                                            onExpand={(rect) =>
-                                                onExpand(task, rect)
-                                            }
-                                        />
+                                            id={task.id}
+                                        >
+                                            <TaskCard
+                                                key={task.id}
+                                                title={task.title}
+                                                date={task.date}
+                                                time={task.time}
+                                                description={task.description}
+                                                isCompleted={task.is_completed}
+                                                onCheckboxToggle={() =>
+                                                    onToggleComplete(
+                                                        task.id,
+                                                        !task.is_completed
+                                                    )
+                                                }
+                                                showCheckbox={true}
+                                                onExpand={(rect) =>
+                                                    onExpand(task, rect)
+                                                }
+                                            />
+                                        </DraggableTask>
                                     ))}
                                 </div>
                             </div>
                         );
                     })}
-                </motion.div>
-            </AnimatePresence>
-        </section>
+                </div>
+                {/* </motion.div>
+                </AnimatePresence> */}
+            </section>
+        </DndContext>
     );
 }
