@@ -8,6 +8,8 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { useUser } from "@/contexts/UserContext";
 
+import { toast } from "sonner";
+
 export default function UserPreferences() {
     // ? next router
     const router = useRouter();
@@ -18,6 +20,13 @@ export default function UserPreferences() {
 
     // ? getting user details via UserContext
     const { profile, loading } = useUser();
+
+    // ? fields for updating password
+    const [currentPassword, setCurrentPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [updating, setUpdating] = useState(false);
+    const [errorMsg, setErrorMsg] = useState("");
 
     // ? HANDLING FADE OUT TRANSITION ON EXIT
     const handleBack = () => {
@@ -43,6 +52,39 @@ export default function UserPreferences() {
         } else {
             router.replace("/auth");
         }
+    };
+
+    // ? UPDATE PASSWORD LOGIC
+    const handlePasswordUpdate = async () => {
+        setErrorMsg("");
+
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            setErrorMsg("Please fill out all fields.");
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            setErrorMsg("New passwords do not match.");
+            return;
+        }
+
+        setUpdating(true);
+
+        const { data, error } = await supabase.auth.updateUser({
+            password: newPassword,
+        });
+
+        if (error) {
+            setErrorMsg(error.message);
+            toast.error("Error updating password.");
+        } else {
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+            toast.success("Password updated!");
+        }
+
+        setUpdating(false);
     };
 
     useEffect(() => {
@@ -125,16 +167,22 @@ export default function UserPreferences() {
                         <TextField
                             placeholder="Current password"
                             type={isPasswordVisible ? "text" : "password"}
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
                         />
                     </div>
                     <div className="flex flex-col flex-1 gap-2">
                         <TextField
                             placeholder="New password"
                             type={isPasswordVisible ? "text" : "password"}
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
                         />
                         <TextField
                             placeholder="Confirm password"
                             type={isPasswordVisible ? "text" : "password"}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
                         />
                     </div>
                 </div>
@@ -155,7 +203,20 @@ export default function UserPreferences() {
                             </>
                         )}
                     </button>
-                    <Button className="">Update</Button>
+                    <div className="flex items-center space-x-2">
+                        {errorMsg && (
+                            <div className="text-sm text-red-600 mt-2 transition-all duration-100 me-2">
+                                {errorMsg}
+                            </div>
+                        )}
+                        <Button
+                            onClick={handlePasswordUpdate}
+                            disabled={updating}
+                            className="w-fit"
+                        >
+                            {updating ? "Updating…" : "Update"}
+                        </Button>
+                    </div>
                 </div>
             </div>
 

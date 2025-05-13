@@ -435,7 +435,8 @@ export default function HomePage() {
                                     <span className="text-xs opacity-70">
                                         Sort
                                     </span>
-                                    Date
+                                    {currentView == "week" ? "Time" : "Date"}
+                                    {/* Date */}
                                     <Icon.ArrowUp height={16} />
                                 </div>
                             )}
@@ -444,7 +445,8 @@ export default function HomePage() {
                                     <span className="text-xs opacity-70">
                                         Sort
                                     </span>
-                                    Date
+                                    {currentView == "week" ? "Time" : "Date"}
+
                                     <Icon.ArrowDown height={16} />
                                 </div>
                             )}
