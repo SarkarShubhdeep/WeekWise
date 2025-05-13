@@ -514,6 +514,7 @@ export default function HomePage() {
             </div>
             {expandedTask && anchorRect && (
                 <ExpandedTaskCard
+                    id={expandedTask.id}
                     isOpen
                     anchorRect={anchorRect}
                     onClose={() => setExpandedTask(null)}

@@ -6,6 +6,7 @@ import TextField from "@/components/TextField";
 import Button from "@/components/Button";
 
 interface ExpandedTaskCardProps {
+    id: string;
     isOpen: boolean;
     onClose: () => void;
     onSave: (data: {
@@ -25,13 +26,8 @@ interface ExpandedTaskCardProps {
     anchorRect: DOMRect;
 }
 
-const modalVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.95, y: 10 },
-    visible: { opacity: 1, scale: 1, y: 0 },
-    exit: { opacity: 0, scale: 0.95, y: 10 },
-};
-
 const ExpandedTaskCard: FC<ExpandedTaskCardProps> = ({
+    id,
     isOpen,
     onClose,
     onSave,
@@ -84,23 +80,20 @@ const ExpandedTaskCard: FC<ExpandedTaskCardProps> = ({
         top = buffer;
     }
     return (
-        <AnimatePresence>
+        <AnimatePresence onExitComplete={() => "Exit animation complete"}>
             {isOpen && (
                 <motion.div
-                    className="fixed z-50 bg-white shadow-lg rounded-xl border p-4 w-[300px] max-h-[90vh] overflow-y-auto"
+                    className="fixed z-50 bg-white shadow-lg rounded-xl border-1 border-gray-200 p-4 w-fit max-h-[90vh] overflow-y-auto"
                     style={{ top, left }}
-                    variants={modalVariants}
-                    initial="hidden"
-                    animate="visible"
-                    exit="exit"
-                    transition={{ duration: 0.2 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <h2 className="mb-4 text-xl font-semibold">Edit Task</h2>
-
                     <div className="space-y-4">
-                        <TextField
-                            className="w-full"
+                        <input
+                            className="w-full border-1 border-gray-200 p-2 text-xl font-semibold rounded-lg"
                             placeholder="Title"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
@@ -113,7 +106,7 @@ const ExpandedTaskCard: FC<ExpandedTaskCardProps> = ({
                                 </label>
                                 <input
                                     type="date"
-                                    className="w-full border rounded-xl p-2"
+                                    className="w-full border border-gray-200 rounded-xl p-2"
                                     value={date}
                                     onChange={(e) => setDate(e.target.value)}
                                 />
@@ -124,7 +117,7 @@ const ExpandedTaskCard: FC<ExpandedTaskCardProps> = ({
                                 </label>
                                 <input
                                     type="time"
-                                    className="w-full border rounded-xl p-2"
+                                    className="w-full border border-gray-200 rounded-xl p-2"
                                     value={time}
                                     onChange={(e) => setTime(e.target.value)}
                                 />
@@ -136,8 +129,10 @@ const ExpandedTaskCard: FC<ExpandedTaskCardProps> = ({
                                 Description
                             </label>
                             <textarea
-                                className="w-full border rounded-xl p-2 h-24 resize-none"
+                                className="w-full border border-gray-200 rounded-xl p-2"
+                                rows={3}
                                 value={description}
+                                placeholder="Task description..."
                                 onChange={(e) => setDescription(e.target.value)}
                             />
                         </div>

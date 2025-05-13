@@ -29,7 +29,6 @@ interface WeekViewProps {
 }
 
 const weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-
 export const getTodayISOInCurrentWeek = (weekOffset: number) => {
     const today = new Date();
     const startOfWeek = new Date();
@@ -170,6 +169,7 @@ export default function WeekView({
                                     )}
                                     {sortedTasks.map((task) => (
                                         <TaskCard
+                                            id={task.id}
                                             key={task.id}
                                             title={task.title}
                                             date={task.date}
