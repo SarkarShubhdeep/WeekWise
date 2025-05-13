@@ -1,5 +1,3 @@
-// home/page.tsx
-
 "use client";
 
 import ViewToggle from "@/components/ViewToggle";
@@ -283,7 +281,7 @@ export default function HomePage() {
         <main className="animate-fade-in">
             <div className="flex flex-col m-auto h-full mt-20 ">
                 {/* //? --------TOP NAV--------- */}
-                <nav className="flex items-center w-full justify-between ">
+                <nav className="flex items-center w-full justify-between px-3  lg:w-4/6 m-auto">
                     {/* //? Today's day 
                 // todo: on click will switch view to current week 
                 */}
@@ -292,7 +290,7 @@ export default function HomePage() {
                         onClick={() => setWeekOffset(0)}
                         title="Go to current week"
                     >
-                        <div className="flex items-center text-4xl font-semibold gap-2">
+                        <div className="flex items-center text-2xl font-semibold gap-2 md:text-4xl transition-transform duration-150">
                             {todayLabel}
                             <div className="h-5 w-5 bg-amber-600 rounded-full"></div>
                         </div>
@@ -307,7 +305,7 @@ export default function HomePage() {
                 </nav>
 
                 {/* //? --------ADD NEW TASK BAR & TASK OPTIONS--------- */}
-                <div className="flex items-center justify-between w-full h-10 mt-5">
+                <div className="flex items-center justify-between w-full h-10 mt-5 px-3  lg:w-4/6 m-auto">
                     <div className="flex gap-2">
                         {/* // todo: will open up a small dialog box to add task  */}
                         <button
