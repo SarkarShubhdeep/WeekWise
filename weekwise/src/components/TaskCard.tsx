@@ -50,7 +50,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         >
             <div
                 ref={cardRef}
-                className={`${className} bg-white border-1 border-gray-100 px-3 py-2 rounded-md hover:shadow-md 
+                className={`${className}  bg-white border-1 border-gray-100 px-3 pt-2 pb-3 rounded-md hover:shadow-md 
                 hover:-translate-y-0.5 hover:border-transparent transition-all duration-100 
                 cursor-pointer flex gap-3 items-start`}
                 onClick={handleClick}

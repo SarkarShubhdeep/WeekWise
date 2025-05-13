@@ -109,89 +109,96 @@ export default function WeekView({
                         x: direction === "forward" ? -100 : 100,
                     }}
                     transition={{ duration: 0.15 }}
-                    className="grid grid-cols-7 min-w-[900px] min-h-[75vh]"
+                    className="flex justify-center  h-[calc(100vh-300px)]"
                 >
-                    {weekDays.map((day, idx) => {
-                        const key = `${day.fullDate.getFullYear()}-${(
-                            day.fullDate.getMonth() + 1
-                        )
-                            .toString()
-                            .padStart(2, "0")}-${day.fullDate
-                            .getDate()
-                            .toString()
-                            .padStart(2, "0")}`;
-                        const dayTasks = tasksByDate[key] || [];
+                    <div className="flex overflow-x-auto justify-start">
+                        {weekDays.map((day, idx) => {
+                            const key = `${day.fullDate.getFullYear()}-${(
+                                day.fullDate.getMonth() + 1
+                            )
+                                .toString()
+                                .padStart(2, "0")}-${day.fullDate
+                                .getDate()
+                                .toString()
+                                .padStart(2, "0")}`;
+                            const dayTasks = tasksByDate[key] || [];
 
-                        const sortedTasks = [...dayTasks].sort((a, b) => {
-                            if (sortBy === "title-asc") {
-                                return a.title.localeCompare(b.title);
-                            }
-                            if (sortBy === "time-asc") {
-                                return (a.time || "").localeCompare(
-                                    b.time || ""
-                                );
-                            }
-                            if (sortBy === "time-desc") {
-                                return (b.time || "").localeCompare(
-                                    a.time || ""
-                                );
-                            }
-                            return 0;
-                        });
+                            const sortedTasks = [...dayTasks].sort((a, b) => {
+                                if (sortBy === "title-asc") {
+                                    return a.title.localeCompare(b.title);
+                                }
+                                if (sortBy === "time-asc") {
+                                    return (a.time || "").localeCompare(
+                                        b.time || ""
+                                    );
+                                }
+                                if (sortBy === "time-desc") {
+                                    return (b.time || "").localeCompare(
+                                        a.time || ""
+                                    );
+                                }
+                                return 0;
+                            });
 
-                        const isCurrentDay =
-                            getTodayISOInCurrentWeek(weekOffset) === key;
+                            const isCurrentDay =
+                                getTodayISOInCurrentWeek(weekOffset) === key;
 
-                        return (
-                            <div
-                                key={idx}
-                                className="flex flex-col gap-2 p-1 py-6 rounded-t-xl hover:bg-gradient-to-b from-primary-100 to-primary-50/0 transition-all duration-100"
-                            >
+                            return (
                                 <div
-                                    className={`flex w-fit items-start gap-2 rounded-full px-2 py-1 text-sm mb-2 ${
-                                        isToday(day.fullDate)
-                                            ? "bg-amber-600 text-white"
-                                            : ""
-                                    }`}
+                                    key={idx}
+                                    className="min-w-[240px] max-w-[300px] flex flex-col  border-gray-200
+                                    hover:bg-gradient-to-b from-primary-100 rounded-2xl"
                                 >
-                                    <span className="font-semibold">
-                                        {day.name}
-                                    </span>
-                                    <span>{day.date}</span>
-                                </div>
+                                    {/* Sticky Header */}
+                                    <div className="sticky top-0 z-20 py-4 px-2 rounded-2xl bg-transparent ">
+                                        <div
+                                            className={`flex w-fit items-start gap-2 rounded-full px-3 py-1 text-sm bg-none ${
+                                                isToday(day.fullDate)
+                                                    ? "bg-amber-600 text-white"
+                                                    : ""
+                                            }`}
+                                        >
+                                            <span className="font-semibold">
+                                                {day.name}
+                                            </span>
+                                            <span>{day.date}</span>
+                                        </div>
+                                    </div>
 
-                                <div className="flex flex-col gap-1">
-                                    {isAdding && isCurrentDay && (
-                                        <NewTaskCardInput
-                                            onCancel={handleCancel}
-                                            onSave={onAddTask}
-                                        />
-                                    )}
-                                    {sortedTasks.map((task) => (
-                                        <TaskCard
-                                            id={task.id}
-                                            key={task.id}
-                                            title={task.title}
-                                            date={task.date}
-                                            time={task.time}
-                                            description={task.description}
-                                            isCompleted={task.is_completed}
-                                            onCheckboxToggle={() =>
-                                                onToggleComplete(
-                                                    task.id,
-                                                    !task.is_completed
-                                                )
-                                            }
-                                            showCheckbox={true}
-                                            onExpand={(rect) =>
-                                                onExpand(task, rect)
-                                            }
-                                        />
-                                    ))}
+                                    {/* Scrollable Task List */}
+                                    <div className="flex-1 overflow-y-auto flex flex-col gap-1 px-1 custom-scrollbar ">
+                                        {isAdding && isCurrentDay && (
+                                            <NewTaskCardInput
+                                                onCancel={handleCancel}
+                                                onSave={onAddTask}
+                                            />
+                                        )}
+                                        {sortedTasks.map((task) => (
+                                            <TaskCard
+                                                id={task.id}
+                                                key={task.id}
+                                                title={task.title}
+                                                date={task.date}
+                                                time={task.time}
+                                                description={task.description}
+                                                isCompleted={task.is_completed}
+                                                onCheckboxToggle={() =>
+                                                    onToggleComplete(
+                                                        task.id,
+                                                        !task.is_completed
+                                                    )
+                                                }
+                                                showCheckbox={true}
+                                                onExpand={(rect) =>
+                                                    onExpand(task, rect)
+                                                }
+                                            />
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
+                    </div>
                 </motion.div>
             </AnimatePresence>
         </section>

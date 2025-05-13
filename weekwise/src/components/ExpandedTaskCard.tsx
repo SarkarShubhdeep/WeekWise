@@ -83,7 +83,7 @@ const ExpandedTaskCard: FC<ExpandedTaskCardProps> = ({
         <AnimatePresence onExitComplete={() => "Exit animation complete"}>
             {isOpen && (
                 <motion.div
-                    className="fixed z-50 bg-white shadow-lg rounded-xl border-1 border-gray-200 p-4 w-fit max-h-[90vh] overflow-y-auto"
+                    className="fixed z-50 bg-white shadow-lg rounded-xl border-1 border-gray-200 p-4 w-fit min-w-[320px] max-h-[90vh] overflow-y-auto"
                     style={{ top, left }}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}

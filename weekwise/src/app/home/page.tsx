@@ -280,8 +280,8 @@ export default function HomePage() {
 
     if (loading) return <div className="p-4">Loading...</div>;
     return (
-        <main className="animate-fade-in min-h-screen p-6">
-            <div className="flex flex-col m-auto w-11/12 lg:w-9/12 md:w-10/12 sm:w-11/12 h-full mt-20 ">
+        <main className="animate-fade-in">
+            <div className="flex flex-col m-auto h-full mt-20 ">
                 {/* //? --------TOP NAV--------- */}
                 <nav className="flex items-center w-full justify-between ">
                     {/* //? Today's day 
@@ -469,7 +469,7 @@ export default function HomePage() {
                 <div className="flex border-t-1 mt-4 gap-2 border-gray-200 pt-4"></div>
 
                 {/* //? --------WEEK VIEW | ALL TASKS SECTION | SEARCH VIEW --------- */}
-                <div className="max-h-[75vh] overflow-y-auto overflow-visible mt-4">
+                <div className=" overflow-hidden mt-4 custom-scrollbar">
                     {/* <div className="text-2xl font-semibold">View Title</div> */}
                     {searchQuery.trim() ? (
                         <SearchView

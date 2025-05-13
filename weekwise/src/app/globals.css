@@ -41,8 +41,8 @@ body {
 div,
 button,
 a {
-    /* background: #ff000010; */
-    /* border: 0.1px dashed #ff0000; */
+    /* background: #ff000010;
+    border: 0.1px dashed #ff0000; */
 }
 
 button {
@@ -94,4 +94,23 @@ button {
             transform: translateX(5%);
         }
     }
+}
+
+/* Overlay scrollbar style */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+}
+
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
 }
