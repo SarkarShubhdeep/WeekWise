@@ -188,6 +188,30 @@ export default function HomePage() {
             }
         });
 
+    // ? DRAG-DROP TASKCARDS IN WEEKVIEW TO CHANGE DATE
+    const handleTaskDrop = async (taskId: string, newDate: string) => {
+        const user = await supabase.auth.getUser();
+        const user_id = user.data.user?.id;
+        if (!user_id) return;
+
+        const { error } = await supabase
+            .from("tasks")
+            .update({ date: newDate })
+            .eq("id", taskId)
+            .eq("user_id", user_id);
+
+        if (error) {
+            console.error("Failed to move task:", error);
+            return;
+        }
+
+        setAllTasks((prev) =>
+            prev.map((task) =>
+                task.id === taskId ? { ...task, date: newDate } : task
+            )
+        );
+    };
+
     // ? SHORTCUT: CMD + K - SEARCH BAR
     useEffect(() => {
         const handleKeyShortcut = (e: KeyboardEvent) => {
@@ -321,7 +345,7 @@ export default function HomePage() {
                         {/* // todo: expands open an input to search */}
 
                         <motion.div
-                            className="flex items-center justify-center border-1 border-gray-700 rounded-full bg-white overflow-hidden"
+                            className="flex items-center justify-center border-1 border-gray-700 rounded-full bg-white"
                             animate={{ width: isExpanded ? 280 : 38 }}
                             transition={{
                                 type: "spring",
@@ -496,6 +520,7 @@ export default function HomePage() {
                             onAddTask={handleAddTask}
                             handleCancel={() => setIsAddingTask(false)}
                             sortBy={weekSort}
+                            onTaskDrop={handleTaskDrop}
                         />
                     ) : (
                         <AllTaskView
