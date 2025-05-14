@@ -54,7 +54,7 @@ export default function NewTaskCardInput({
     };
 
     return (
-        <div className="bg-white border border-gray-300 rounded-md px-3 py-2 shadow-sm max-w-[400px]">
+        <div className="w-full bg-white border border-gray-300 rounded-md px-3 py-2 shadow-sm max-w-[400px]">
             <input
                 ref={inputRef}
                 value={input}

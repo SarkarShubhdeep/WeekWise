@@ -95,7 +95,7 @@ export default function WeekView({
     const isToday = (d: Date) => d.toDateString() === today.toDateString();
 
     return (
-        <section className="w-full  overflow-visible">
+        <section className="w-full">
             <AnimatePresence mode="wait">
                 <motion.div
                     key={weekOffset}
@@ -109,7 +109,7 @@ export default function WeekView({
                         x: direction === "forward" ? -100 : 100,
                     }}
                     transition={{ duration: 0.15 }}
-                    className="flex justify-center  h-[calc(100vh-300px)]"
+                    className="flex justify-center  h-[calc(100vh-320px)]"
                 >
                     <div className="flex overflow-x-auto justify-start">
                         {weekDays.map((day, idx) => {
@@ -165,8 +165,8 @@ export default function WeekView({
                                         </div>
                                     </div>
 
-                                    {/* Scrollable Task List */}
-                                    <div className="flex-1 overflow-y-auto flex flex-col gap-1 px-1 custom-scrollbar ">
+                                    {/* //? SCROLLABLE TASK LIST */}
+                                    <div className="flex-1 overflow-y-auto flex flex-col gap-1 px-1 pt-3 pb-6 custom-scrollbar ">
                                         {isAdding && isCurrentDay && (
                                             <NewTaskCardInput
                                                 onCancel={handleCancel}

@@ -51,33 +51,36 @@ export default function SearchView({
 
     if (!filtered.length) {
         return (
-            <div className="text-2xl h-full mt-10 text-gray-400 px-4 py-6 flex items-center gap-3">
-                <span className="text-5xl block">🤔</span>
+            <div className="flex justify-center text-2xl h-[calc(100vh-320px)] mt-10 text-gray-400 px-4 py-6 gap-3">
+                {/* <span className="text-5xl block">🤔</span> */}
                 No tasks matched your search.
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col gap-1 w-full scroll-auto overflow-visible bg-white/20 p-2">
-            {filtered.map((task) => (
-                <TaskCard
-                    key={task.id}
-                    className="max-w-[400px]"
-                    title={task.title}
-                    date={task.date}
-                    time={task.time}
-                    description={
-                        showDescriptions ? task.description : undefined
-                    }
-                    isCompleted={task.is_completed}
-                    showCheckbox
-                    onCheckboxToggle={() =>
-                        onToggleComplete(task.id, !task.is_completed)
-                    }
-                    onExpand={(rect) => onExpand?.(task, rect)}
-                />
-            ))}
+        <div className="flex justify-center">
+            <div className="flex flex-col gap-1 overflow-y-auto h-[calc(100vh-320px)]  w-[400px]  scroll-auto overflow-visible bg-white/20 p-2">
+                {filtered.map((task) => (
+                    <TaskCard
+                        id={task.id}
+                        key={task.id}
+                        className="min-w-[300px]"
+                        title={task.title}
+                        date={task.date}
+                        time={task.time}
+                        description={
+                            showDescriptions ? task.description : undefined
+                        }
+                        isCompleted={task.is_completed}
+                        showCheckbox
+                        onCheckboxToggle={() =>
+                            onToggleComplete(task.id, !task.is_completed)
+                        }
+                        onExpand={(rect) => onExpand?.(task, rect)}
+                    />
+                ))}
+            </div>
         </div>
     );
 }

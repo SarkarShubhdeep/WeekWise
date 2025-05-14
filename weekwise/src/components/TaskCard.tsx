@@ -50,7 +50,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         >
             <div
                 ref={cardRef}
-                className={`${className}  bg-white border-1 border-gray-100 px-3 pt-2 pb-3 rounded-md hover:shadow-md 
+                className={`${className}  bg-white border-1 border-gray-100 px-3 py-1  rounded-md hover:shadow-md 
                 hover:-translate-y-0.5 hover:border-transparent transition-all duration-100 
                 cursor-pointer flex gap-3 items-start`}
                 onClick={handleClick}
@@ -61,7 +61,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                     checked={isCompleted}
                     onChange={onCheckboxToggle}
                     onClick={(e) => e.stopPropagation()}
-                    className="mt-1 h-4 w-4 text-primary-500"
+                    className="mt-2 h-4 w-4 text-primary-500"
                 />
 
                 <div
@@ -71,14 +71,16 @@ const TaskCard: React.FC<TaskCardProps> = ({
                             : "opacity-100"
                     }`}
                 >
-                    <div className="font-medium">{title}</div>
-                    <div className="space-y-1 text-blue-600">
-                        <div className="text-xs">{time}</div>
-                        <div className="text-xs">{date}</div>
-                    </div>
+                    <div className="font-medium py-1">{title}</div>
+                    {(date || time) && (
+                        <div className="space-y-1 text-blue-600 py-1">
+                            {time && <div className="text-xs">{time}</div>}
+                            {date && <div className="text-xs">{date}</div>}
+                        </div>
+                    )}
 
                     {description && (
-                        <div className="text-xs text-gray-700 mt-1">
+                        <div className="text-xs text-gray-700 mt-1 pb-3">
                             {description}
                         </div>
                     )}

@@ -13,6 +13,7 @@ import SearchView from "@/sections/SearchView";
 import ExpandedTaskCard from "@/components/ExpandedTaskCard";
 
 import { getTodayISOInCurrentWeek } from "@/sections/WeekView";
+import Image from "next/image";
 
 interface Task {
     id: string;
@@ -76,6 +77,33 @@ export default function HomePage() {
         setAllTasks((prev) => [data, ...prev]);
         setIsAddingTask(false);
         setNewTaskText("");
+    };
+
+    // ? HANDLING DELETE ALL TASK FOR ALLTASKVIEW
+    const handleClearCompleted = async () => {
+        const user = await supabase.auth.getUser();
+        const user_id = user.data.user?.id;
+        if (!user_id) return;
+
+        const completedIds = allTasks
+            .filter((task) => task.is_completed)
+            .map((task) => task.id);
+
+        if (completedIds.length === 0) return;
+
+        const { error } = await supabase
+            .from("tasks")
+            .delete()
+            .in("id", completedIds);
+
+        if (error) {
+            console.error("Failed to clear completed tasks:", error);
+            return;
+        }
+
+        setAllTasks((prev) =>
+            prev.filter((task) => !completedIds.includes(task.id))
+        );
     };
 
     // ? View toggle: week | all
@@ -281,7 +309,7 @@ export default function HomePage() {
         <main className="animate-fade-in">
             <div className="flex flex-col m-auto h-full mt-20 ">
                 {/* //? --------TOP NAV--------- */}
-                <nav className="flex items-center w-full justify-between px-3  lg:w-4/6 m-auto">
+                <nav className="flex items-center w-full justify-between px-3 lg:w-4/6 m-auto">
                     {/* //? Today's day 
                 // todo: on click will switch view to current week 
                 */}
@@ -297,7 +325,7 @@ export default function HomePage() {
                     </div>
 
                     <div
-                        className="text-xl font-semibold flex justify-center items-center h-14 w-14 rounded-full border-1 hover:ring-3 ring-gray-700 ring-offset-3 hover:scale-90 transition-all duration-100 cursor-pointer"
+                        className="text-xl font-semibold flex justify-center items-center md:h-14 md:w-14 h-12 w-12 rounded-full border-1 hover:ring-3 ring-gray-700 ring-offset-3 hover:scale-90 transition-all duration-100 cursor-pointer"
                         onClick={() => router.push("/userpreferences")}
                     >
                         SS
@@ -305,11 +333,11 @@ export default function HomePage() {
                 </nav>
 
                 {/* //? --------ADD NEW TASK BAR & TASK OPTIONS--------- */}
-                <div className="flex items-center justify-between w-full h-10 mt-5 px-3  lg:w-4/6 m-auto">
+                <div className="flex items-center justify-between w-full h-10 mt-5 px-3 lg:w-4/6 m-auto">
                     <div className="flex gap-2">
                         {/* // todo: will open up a small dialog box to add task  */}
                         <button
-                            className="flex text-sm items-center ps-2 py-2 pe-3 gap-1 bg-primary-500 hover:bg-primary-700 text-white rounded-full transition-colors duration-100"
+                            className="flex text-sm items-center justify-center pe-1 gap-1 h-9 w-26 bg-primary-500 hover:bg-primary-700 text-white rounded-full transition-colors duration-100"
                             onClick={() => setIsAddingTask(true)}
                         >
                             <Icon.Plus height={20} />
@@ -319,8 +347,8 @@ export default function HomePage() {
                         {/* // todo: expands open an input to search */}
 
                         <motion.div
-                            className="flex items-center justify-center border-1 border-gray-700 rounded-full bg-white overflow-hidden"
-                            animate={{ width: isExpanded ? 280 : 38 }}
+                            className="flex items-center justify-center border-1 border-gray-700 rounded-full w-[36px] overflow-hidden h-9"
+                            animate={{ width: isExpanded ? 280 : 36 }}
                             transition={{
                                 type: "spring",
                                 stiffness: 300,
@@ -370,11 +398,10 @@ export default function HomePage() {
                         {isExpanded ? (
                             ""
                         ) : (
-                            <div className="text-xs italic  flex items-center opacity-50">
-                                <span className="font-mono pe-2 font-semibold">
+                            <div className="text-xs lg:flex items-center opacity-50 hidden ">
+                                <span className="font-mono font-semibold">
                                     cmd + k
-                                </span>{" "}
-                                to search your tasks
+                                </span>
                             </div>
                         )}
                     </div>
@@ -464,10 +491,8 @@ export default function HomePage() {
                     </div>
                 </div>
 
-                <div className="flex border-t-1 mt-4 gap-2 border-gray-200 pt-4"></div>
-
                 {/* //? --------WEEK VIEW | ALL TASKS SECTION | SEARCH VIEW --------- */}
-                <div className=" overflow-hidden mt-4 custom-scrollbar">
+                <div className=" overflow-hidden border-t border-gray-200 mt-2 pt-3 custom-scrollbar">
                     {/* <div className="text-2xl font-semibold">View Title</div> */}
                     {searchQuery.trim() ? (
                         <SearchView
@@ -506,8 +531,17 @@ export default function HomePage() {
                             setNewTaskText={setNewTaskText}
                             onAddTask={handleAddTask}
                             handleCancel={() => setIsAddingTask(false)}
+                            onClearCompleted={handleClearCompleted}
                         />
                     )}
+                </div>
+                <div className="flex items-center w-full justify-between px-3 lg:w-4/6 m-auto py-4 mt-2 bg-blue-500/0">
+                    <Image
+                        src="/weekwise-logo-light.svg"
+                        width={100}
+                        height={50}
+                        alt="WeekWise logo"
+                    />
                 </div>
             </div>
             {expandedTask && anchorRect && (
